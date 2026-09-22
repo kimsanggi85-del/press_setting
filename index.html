@@ -2554,7 +2554,9 @@ td.ecell input.ci:focus{outline:2px solid var(--steel);border-color:var(--steel)
 .cdh{font-size:23px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--steel);text-align:right;
   line-height:1.1;white-space:nowrap;letter-spacing:-.5px}
 .cdh small{font-size:11px;font-weight:600;color:var(--muted)}
-.cspec{grid-column:1;font-size:12px;color:var(--muted);line-height:1.5}
+.cspec{grid-column:1/-1;font-size:12px;color:var(--muted);line-height:1.55;margin-top:1px}
+.cspec span{white-space:nowrap}
+.cspec i{font-style:normal;opacity:.5;margin:0 4px}
 .cact{grid-column:1/-1;display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
 @media(max-width:700px){
   body{font-size:15px}
@@ -2835,6 +2837,13 @@ function head(extra,acts){
     <h2>${esc(VIEWS[view])}${extra?`<span class="sub">${extra}</span>`:""}</h2>
     ${acts?`<div class="acts noprint">${acts}</div>`:""}</div>`;
 }
+/* 승인자만 가능한 동작 (기종 추가·삭제, 설비 관리) */
+function needAppr(fn){
+  if(isAdmin()) return fn();
+  if(!auth){ if(!doLogin()) return; }
+  if(!isAdmin()) return alert("이 작업은 승인자만 할 수 있습니다.\n승인자 PIN(4001 · 4003 · 4005)으로 로그인하세요.");
+  fn();
+}
 /* 수정 권한이 필요한 동작 — 미로그인이면 PIN을 묻고 이어서 실행 */
 function needEdit(fn){
   if(canEdit()) return fn();
@@ -2899,31 +2908,31 @@ function vStd(){
       <td class="num">${esc(it.p)}</td><td class="num">${esc(it.spm)}</td>
       <td>${c?`<span class="tag ${c.ok?"g":"r"}" title="${esc(c.by)} ${fmtTs(c.ts)}">${c.ok?"OK":"NG"} ${esc(c.actual)}</span>`:'<span class="tag d">미점검</span>'}</td>
       <td class="noprint"><button class="s p" data-act="check" data-m="${esc(m.no)}" data-i="${esc(it.id)}">세팅체크</button>
-        ${canEdit()
+        ${isAdmin()
           ? `<button class="s" data-act="edit" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정</button>
-             <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제</button>
-             <button class="s" data-act="req" data-m="${esc(m.no)}" data-i="${esc(it.id)}" title="승인을 받아 반영하려면">요청</button>`
+             <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제</button>`
           : `<button class="s" data-act="req" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정요청</button>`}
       </td></tr>`;}).join("");
 
   const cards=rows.map(it=>{
     const c=lastCheck(m.no,it.id);
-    const spec=[it.mat,it.t?it.t+"T":"",it.w?"W"+it.w:"",it.p?"P"+it.p:"",it.spm?it.spm+" SPM":""].filter(Boolean).join(" · ");
+    const spec=[it.mat,it.t?it.t+"T":"",it.w?"W"+it.w:"",it.p?"P"+it.p:"",it.spm?"SPM "+it.spm:""]
+      .filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('<i>·</i>');
     return `<div class="citem">
       <div class="cname">${esc(it.name)}</div><div class="cdh">${esc(it.dh)}<small> mm</small></div>
-      <div class="cspec">${esc(spec)}</div>
+      <div class="cspec">${spec}</div>
       <div class="cact"><button class="p" data-act="check" data-m="${esc(m.no)}" data-i="${esc(it.id)}">세팅체크</button>
         <button data-act="req" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정요청</button>
-        ${canEdit()?`<button class="s" data-act="edit" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정</button>
+        ${isAdmin()?`<button class="s" data-act="edit" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정</button>
           <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제</button>`:""}
         ${c?`<span class="tag ${c.ok?"g":"r"}">${c.ok?"OK":"NG"} ${esc(c.actual)} · ${fmtTs(c.ts).slice(5,10)}</span>`:""}</div></div>`;}).join("");
 
   $("#main").innerHTML = head(`${esc(m.maker)} ${esc(m.ton)}톤 ${esc(m.no)}호기 · ${esc(docNo(m))}`,
     editMode
-    ? `<button class="p" id="bSave">저장 (${chgCnt()}건)</button><button id="bCancel">취소</button>`
-    : `<button id="bEdit">✎ 표 직접수정${canEdit()?"":" 🔒"}</button>
-       <button class="g" id="bAdd">＋ 기종 추가${canEdit()?"":" 🔒"}</button>
-       <button id="bMach">⚙ 설비 관리${canEdit()?"":" 🔒"}</button>`) + `
+    ? `<button class="p" id="bSave">${isAdmin()?"저장":"승인요청"} (${chgCnt()}건)</button><button id="bCancel">취소</button>`
+    : `<button id="bEdit">✎ ${isAdmin()?"표 직접수정":"표 수정요청"}${canEdit()?"":" 🔒"}</button>
+       <button class="g" id="bAdd">＋ 기종 추가${isAdmin()?"":" 🔒"}</button>
+       <button id="bMach">⚙ 설비 관리${isAdmin()?"":" 🔒"}</button>`) + `
     ${qrMode?`<div class="fieldbar"><div class="no">${esc(m.no)}<span>호기</span></div>
       <div class="tx">${esc(m.maker)} ${esc(m.ton)}톤<br>금형 교체 후 [세팅체크] 기록</div>
       <div class="fbtn"><span class="rv">${revNo(S.rev)}</span>
@@ -2934,8 +2943,8 @@ function vStd(){
       <div class="kpi good"><small>점검 합격</small><b>${ck.length-ng}</b><em>누적</em></div>
       <div class="kpi ${ng?"bad":""}"><small>점검 불합격</small><b>${ng}</b><em>재조정 대상</em></div>
     </div>
-    ${editMode?`<div class="editbar noprint">✎ <b>표 직접수정</b> 중 — 칸을 눌러 값을 고치고 [저장]을 누르세요.
-      바뀐 칸은 노란색으로 표시됩니다. (Esc = 해당 칸 원복 · Enter = 다음 칸) 현재 <b id="chgN">${chgCnt()}</b>건 변경됨</div>`:""}
+    ${editMode?`<div class="editbar noprint">✎ <b>${isAdmin()?"표 직접수정":"표 수정요청"}</b> 작성 중 — 칸을 눌러 값을 고치고 [저장]을 누르세요.
+      바뀐 칸은 노란색으로 표시됩니다. (Esc = 해당 칸 원복 · Enter = 다음 칸) 현재 <b id="chgN">${chgCnt()}</b>건 변경 ${isAdmin()?"— 저장 시 즉시 반영":"— 저장 시 승인요청으로 등록"}</div>`:""}
     <div class="panel noprint fold${qrMode?" qr-hide":" open"}" id="condBox"${editMode?' hidden':''}><h3 id="condTg">조회조건</h3>
       <div class="fl">
         <label>설비</label>
@@ -2971,8 +2980,8 @@ function vStd(){
   const cb=$("#condBox"); if(cb) $("#condTg").onclick=()=>cb.classList.toggle("open");
   const bl=$("#bAll"); if(bl) bl.onclick=()=>{ qrMode=false; render();
     setTimeout(()=>{ const c=$("#condBox"); if(c){c.classList.add("open"); c.scrollIntoView({block:"center",behavior:"smooth"});} },60); };
-  const ba=$("#bAdd"); if(ba) ba.onclick=()=>needEdit(()=>openItem(cur.no,null));
-  const bm=$("#bMach"); if(bm) bm.onclick=()=>needEdit(openMachine);
+  const ba=$("#bAdd"); if(ba) ba.onclick=()=>needAppr(()=>openItem(cur.no,null));
+  const bm=$("#bMach"); if(bm) bm.onclick=()=>needAppr(openMachine);
   const be=$("#bEdit"); if(be) be.onclick=()=>needEdit(()=>{editMode=true; edits={}; render();});
   const bc=$("#bCancel"); if(bc) bc.onclick=()=>{
     if(chgCnt()&&!confirm("고친 내용을 버리고 편집을 끝낼까요?")) return;
@@ -2990,7 +2999,7 @@ function vStd(){
       if(!Object.keys(edits[id]).length) delete edits[id];
       inp.parentElement.classList.toggle("chg",v!==org);
       const n=chgCnt(); const cn=$("#chgN"); if(cn) cn.textContent=n;
-      const sb=$("#bSave"); if(sb) sb.textContent=`저장 (${n}건)`;
+      const sb=$("#bSave"); if(sb) sb.textContent=`${isAdmin()?"저장":"승인요청"} (${n}건)`;
     };
     inp.onkeydown=e=>{ if(e.key==="Escape"){ inp.value=String(itOf(cur,inp.dataset.ci)[inp.dataset.k]??""); inp.oninput(); }
       if(e.key==="Enter"){ e.preventDefault(); const all=$$(".ci"); const i=all.indexOf(inp); if(all[i+1]) all[i+1].focus(); } };
@@ -3014,7 +3023,8 @@ function vSearch(){
       <td class="noprint"><button class="s" data-act="go" data-m="${esc(m.no)}">표준서</button></td></tr>`).join("");
   const cards=hits.map(({m,it})=>`<div class="citem">
       <div class="cname">${esc(it.name)}</div><div class="cdh">${esc(it.dh)}<small> mm</small></div>
-      <div class="cspec">${esc(m.no)}호기 ${esc(m.maker)} ${esc(m.ton)}톤 · ${esc(it.mat)} · ${esc(it.t)}T · W${esc(it.w)} · ${esc(it.spm)} SPM</div>
+      <div class="cspec">${[`${m.no}호기 ${m.maker} ${m.ton}톤`,it.mat,it.t?it.t+"T":"",it.w?"W"+it.w:"",
+        it.p?"P"+it.p:"",it.spm?"SPM "+it.spm:""].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('<i>·</i>')}</div>
       <div class="cact"><button class="p" data-act="go" data-m="${esc(m.no)}">표준서 열기</button></div></div>`).join("");
   $("#main").innerHTML = head(t?`검색어 "${esc(t)}"`:"") + `
     <div class="panel noprint"><h3>조회조건</h3>
@@ -3417,23 +3427,48 @@ function saveEdits(){
   const badDh=list.filter(x=>x.k==="dh"&&(!x.nv.trim()||isNaN(parseFloat(x.nv))));
   if(badDh.length) return alert("다이하이트는 숫자로 입력하세요.");
 
-  openModal(`표 직접수정 저장 · ${esc(m.no)}호기`,
-    `<div class="info">변경 <b>${n}</b>건을 반영합니다. 저장하면 개정번호가 ${revNo(S.rev+1)} 로 올라갑니다.</div>
+  const asReq = !isAdmin();     /* 수정가능자는 승인요청으로 */
+  openModal(asReq?`표 수정 승인요청 · ${esc(m.no)}호기`:`표 직접수정 저장 · ${esc(m.no)}호기`,
+    `<div class="info">${asReq
+        ? `변경 <b>${n}</b>건을 <b>승인요청</b>으로 올립니다. 승인자(4001 · 4003 · 4005)가 승인하면 표준서에 반영됩니다.`
+        : `변경 <b>${n}</b>건을 반영합니다. 저장하면 개정번호가 ${revNo(S.rev+1)} 로 올라갑니다.`}</div>
      <div class="tw" style="max-height:38vh;margin-bottom:12px"><table><thead><tr>
        <th>기종명</th><th>항목</th><th class="num">변경전</th><th class="num">변경후</th></tr></thead>
        <tbody>${list.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.lbl)}</td>
          <td class="num muted">${esc(x.old)||"—"}</td><td class="dh">${esc(x.nv)||"—"}</td></tr>`).join("")}</tbody></table></div>
      <div class="fld"><label>변경 사유 <span style="color:var(--red)">*</span></label>
        <textarea id="evr" placeholder="예) 금형 재연마 반영 — 초물 실측 기준"></textarea></div>`,
-    `<button onclick="closeModal()">취소</button><button class="p" id="evS">저장</button>`);
+    `<button onclick="closeModal()">취소</button><button class="p" id="evS">${asReq?"승인요청 등록":"저장"}</button>`);
   $("#evS").onclick=async()=>{
     const rs=$("#evr").value.trim();
     if(!rs) return alert("변경 사유는 필수입니다.");
     $("#evS").disabled=true;
+    if(asReq){
+      /* 수정가능자 : 기종별로 묶어 승인요청 등록 */
+      const byItem={};
+      list.forEach(x=>{ (byItem[x.id]=byItem[x.id]||{name:x.name,ch:[]}).ch.push({field:x.k,old:x.old,new:x.nv}); });
+      const ids=Object.keys(byItem);
+      await commit(()=>{
+        ids.forEach(id=>{
+          S.reqs.unshift({id:uid(),ts:nowISO(),by:uname(),mno:String(m.no),itemId:id,
+            itemName:byItem[id].name,changes:byItem[id].ch,reason:rs,status:"pending"});
+        });
+        editMode=false; edits={};
+      });
+      closeModal();
+      const body=ids.map(id=>`[${byItem[id].name}]\n`+byItem[id].ch
+        .map(c=>`· ${FIELDS[c.field]||c.field} : ${c.old||"—"} → ${c.new||"—"}`).join("\n")).join("\n");
+      const sent=await ntfyPush(`세팅표준 승인요청 · ${m.no}호기`,
+        `${m.maker} ${m.ton}톤 ${m.no}호기 / 기종 ${ids.length}종 · 변경 ${n}건\n${body}\n사유 : ${rs}\n요청자 : ${uname()}\n\n승인 대기 ${pendCnt()}건`,
+        ["pencil","warning"], 4, appUrl(m.no));
+      alert(`승인요청 ${ids.length}건(변경 ${n}건)을 등록했습니다.\n승인자가 승인하면 표준서에 반영됩니다.`
+        + (sent?"\n\n승인자에게 알림을 보냈습니다.":"\n\n(알림 전송 실패 — 요청은 정상 등록됨)"));
+      return;
+    }
     await commit(()=>{
       const mm=mOf(m.no); if(!mm) return;
       S.rev=S.rev+1; S.revDate=today();
-      const stamp={ts:nowISO(),rev:S.rev,mno:String(m.no),reason:rs,by:me,appBy:me,act:"edit"};
+      const stamp={ts:nowISO(),rev:S.rev,mno:String(m.no),reason:rs,by:uname(),appBy:uname(),act:"edit"};
       list.forEach(x=>{
         const ii=itOf(mm,x.id); if(!ii) return;
         ii[x.k]=x.nv;
@@ -3450,7 +3485,9 @@ function saveEdits(){
 const ITF=[["name","기종명(품번)","text"],["dh","다이하이트 (mm)","num"],["mat","재질","text"],
            ["t","두께T (mm)","num"],["w","폭W (mm)","text"],["p","피치P (mm)","text"],["spm","최대SPM","text"]];
 function openItem(mno,itemId){
-  if(!canEdit()) return alert("수정 권한이 없습니다. PIN으로 로그인하세요.");
+  if(!itemId && !isAdmin()) return alert("기종 추가는 승인자만 할 수 있습니다.\n승인자 PIN(4001 · 4003 · 4005)으로 로그인하세요.");
+  if(itemId && !isAdmin()) return alert("기종 수정은 [수정요청]으로 올려 주세요.\n승인자가 승인하면 표준서에 반영됩니다.");
+  if(!canEdit()) return needLogin();
   const m=mOf(mno), it=itemId?itOf(m,itemId):null, isNew=!it;
   openModal(`${isNew?"기종 추가":"기종 수정"} · ${esc(m.no)}호기`,
     `<div class="info">${isNew?`<b>${esc(m.maker)} ${esc(m.ton)}톤 ${esc(m.no)}호기</b> 에 새 기종을 등록합니다.`
@@ -3514,7 +3551,7 @@ function openItem(mno,itemId){
 
 /* ═══ 관리자 : 기종 삭제 ═══ */
 function delItem(mno,itemId){
-  if(!canEdit()) return alert("수정 권한이 없습니다. PIN으로 로그인하세요.");
+  if(!isAdmin()) return alert("기종 삭제는 승인자만 할 수 있습니다.\n승인자 PIN(4001 · 4003 · 4005)으로 로그인하세요.");
   const m=mOf(mno), it=itOf(m,itemId); if(!it) return;
   const ck=S.checks.filter(c=>c.mno===String(mno)&&c.itemId===itemId).length;
   openModal(`기종 삭제 · ${esc(m.no)}호기`,
@@ -3548,7 +3585,7 @@ function delItem(mno,itemId){
 
 /* ═══ 관리자 : 설비 관리 ═══ */
 function openMachine(){
-  if(!canEdit()) return alert("수정 권한이 없습니다. PIN으로 로그인하세요.");
+  if(!isAdmin()) return alert("설비 관리는 승인자만 할 수 있습니다.\n승인자 PIN(4001 · 4003 · 4005)으로 로그인하세요.");
   const rows=S.machines.map(m=>`<tr><td><b>${esc(m.no)}호기</b></td><td>${esc(m.maker)}</td>
       <td class="num">${esc(m.ton)}톤</td><td class="num">${m.items.length}종</td>
       <td><button class="s d" data-mdel="${esc(m.no)}"${m.items.length?' title="등록 기종을 먼저 삭제하세요"':""}>삭제</button></td></tr>`).join("");
