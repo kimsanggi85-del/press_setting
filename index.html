@@ -2729,6 +2729,8 @@ const ACCOUNTS={
   "2007":{name:"강영태",role:"editor"}
 };
 const ROLET={approver:"승인자",editor:"수정자"};
+/* 승인요청 종류 */
+const KIND={edit:"값 수정",add:"기종 추가",del:"기종 삭제",machAdd:"설비 추가",machDel:"설비 삭제"};
 /* ── ntfy 알림 (다른 앱과 같은 토픽) ──
    끄려면 NTFY_ON=false, 토픽을 바꾸려면 NTFY_TOPIC 값만 고치세요. */
 const NTFY_ON=true, NTFY_TOPIC="taejincall";
@@ -2783,7 +2785,8 @@ function normalize(d){
   d.machines=Array.isArray(d.machines)&&d.machines.length?d.machines:SEED.machines;
   d.machines.forEach(m=>{m.no=String(m.no); m.items=(m.items||[]).map(it=>({id:it.id||uid(),...it}));});
   d.reqs=d.reqs||[]; d.logs=d.logs||[]; d.checks=d.checks||[];
-  d.reqs.forEach(r=>{ if(!Array.isArray(r.changes)) r.changes=[{field:r.field,old:r.old,new:r.new}]; });
+  d.reqs.forEach(r=>{ if(!Array.isArray(r.changes)) r.changes=[{field:r.field,old:r.old,new:r.new}];
+    if(!r.kind) r.kind="edit"; });
   d.ua=d.ua||"2000-01-01T00:00:00.000Z";   /* 없으면 과거 — 서버본이 이기게 */
   return d;
 }
@@ -2911,7 +2914,8 @@ function vStd(){
         ${isAdmin()
           ? `<button class="s" data-act="edit" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정</button>
              <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제</button>`
-          : `<button class="s" data-act="req" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정요청</button>`}
+          : `<button class="s" data-act="req" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정요청</button>
+             <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제요청</button>`}
       </td></tr>`;}).join("");
 
   const cards=rows.map(it=>{
@@ -2924,15 +2928,16 @@ function vStd(){
       <div class="cact"><button class="p" data-act="check" data-m="${esc(m.no)}" data-i="${esc(it.id)}">세팅체크</button>
         <button data-act="req" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정요청</button>
         ${isAdmin()?`<button class="s" data-act="edit" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정</button>
-          <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제</button>`:""}
+          <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제</button>`
+          :`<button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제요청</button>`}
         ${c?`<span class="tag ${c.ok?"g":"r"}">${c.ok?"OK":"NG"} ${esc(c.actual)} · ${fmtTs(c.ts).slice(5,10)}</span>`:""}</div></div>`;}).join("");
 
   $("#main").innerHTML = head(`${esc(m.maker)} ${esc(m.ton)}톤 ${esc(m.no)}호기 · ${esc(docNo(m))}`,
     editMode
     ? `<button class="p" id="bSave">${isAdmin()?"저장":"승인요청"} (${chgCnt()}건)</button><button id="bCancel">취소</button>`
     : `<button id="bEdit">✎ ${isAdmin()?"표 직접수정":"표 수정요청"}${canEdit()?"":" 🔒"}</button>
-       <button class="g" id="bAdd">＋ 기종 추가${isAdmin()?"":" 🔒"}</button>
-       <button id="bMach">⚙ 설비 관리${isAdmin()?"":" 🔒"}</button>`) + `
+       <button class="g" id="bAdd">＋ 기종 추가${canEdit()?"":" 🔒"}</button>
+       <button id="bMach">⚙ 설비 관리${canEdit()?"":" 🔒"}</button>`) + `
     ${qrMode?`<div class="fieldbar"><div class="no">${esc(m.no)}<span>호기</span></div>
       <div class="tx">${esc(m.maker)} ${esc(m.ton)}톤<br>금형 교체 후 [세팅체크] 기록</div>
       <div class="fbtn"><span class="rv">${revNo(S.rev)}</span>
@@ -2980,8 +2985,8 @@ function vStd(){
   const cb=$("#condBox"); if(cb) $("#condTg").onclick=()=>cb.classList.toggle("open");
   const bl=$("#bAll"); if(bl) bl.onclick=()=>{ qrMode=false; render();
     setTimeout(()=>{ const c=$("#condBox"); if(c){c.classList.add("open"); c.scrollIntoView({block:"center",behavior:"smooth"});} },60); };
-  const ba=$("#bAdd"); if(ba) ba.onclick=()=>needAppr(()=>openItem(cur.no,null));
-  const bm=$("#bMach"); if(bm) bm.onclick=()=>needAppr(openMachine);
+  const ba=$("#bAdd"); if(ba) ba.onclick=()=>needEdit(()=>openItem(cur.no,null));
+  const bm=$("#bMach"); if(bm) bm.onclick=()=>needEdit(openMachine);
   const be=$("#bEdit"); if(be) be.onclick=()=>needEdit(()=>{editMode=true; edits={}; render();});
   const bc=$("#bCancel"); if(bc) bc.onclick=()=>{
     if(chgCnt()&&!confirm("고친 내용을 버리고 편집을 끝낼까요?")) return;
@@ -3056,9 +3061,12 @@ function vReq(){
       ? `<button class="s g" data-act="approve" data-r="${esc(r.id)}">승인</button>
          <button class="s d" data-act="reject" data-r="${esc(r.id)}">반려</button>`
       : (r.status==="pending"?'<span class="muted">승인 대기</span>':`<span class="muted">${esc(r.appBy||"")}</span>`);
-    return `<tr><td class="muted">${fmtTs(r.ts)}</td><td><b>${esc(r.mno)}호기</b></td><td>${esc(r.itemName)}</td>
-      <td class="wrap">${(r.changes||[]).map(c=>
-        `${esc(FIELDS[c.field]||c.field)} <span class="muted">${esc(c.old||"—")}</span> → <b class="dh" style="display:inline">${esc(c.new||"—")}</b>`).join("<br>")}</td>
+    const kd=r.kind||"edit";
+    return `<tr><td class="muted">${fmtTs(r.ts)}</td><td><b>${esc(r.mno)}호기</b></td><td>${esc(r.itemName||"—")}</td>
+      <td><span class="tag ${kd==="del"||kd==="machDel"?"r":(kd==="add"||kd==="machAdd")?"g":""}">${esc(KIND[kd]||kd)}</span></td>
+      <td class="wrap">${kd==="edit"
+        ? (r.changes||[]).map(c=>`${esc(FIELDS[c.field]||c.field)} <span class="muted">${esc(c.old||"—")}</span> → <b class="dh" style="display:inline">${esc(c.new||"—")}</b>`).join("<br>")
+        : esc(r.snapshot||"")}</td>
       <td class="wrap">${esc(r.reason||"")}</td><td>${esc(r.by)}</td>
       <td><span class="tag ${r.status==="pending"?"a":r.status==="approved"?"g":"r"}">${r.status==="pending"?"대기":r.status==="approved"?"승인":"반려"}</span></td>
       <td class="noprint">${act}</td></tr>`;}).join("");
@@ -3074,12 +3082,12 @@ function vReq(){
       ${isAdmin()?`<span class="tag g">${esc(auth.name)} · 승인자 — 승인 가능</span>`
         :auth?`<span class="tag a">${esc(auth.name)} · 수정자 — 승인 불가 (승인자 PIN 필요)</span>`
              :'<span class="tag d">조회 권한 — 승인하려면 승인자 PIN 로그인</span>'}</h3>
-      <div class="tw"><table><colgroup><col style="width:11.5%"><col style="width:5.6%"><col style="width:14.5%">
-        <col style="width:21%"><col style="width:21%"><col style="width:6.6%"><col style="width:5.8%">
-        <col class="noprint" style="width:10.5%"></colgroup>
-        <thead><tr><th>요청일시</th><th>설비</th><th>기종명</th><th>변경 내용</th>
+      <div class="tw"><table><colgroup><col style="width:11%"><col style="width:5.4%"><col style="width:13%">
+        <col style="width:7.6%"><col style="width:19%"><col style="width:18%"><col style="width:6.4%">
+        <col style="width:5.6%"><col class="noprint" style="width:10%"></colgroup>
+        <thead><tr><th>요청일시</th><th>설비</th><th>기종명</th><th>종류</th><th>변경 내용</th>
         <th>변경사유</th><th>요청자</th><th>상태</th><th class="noprint">처리</th></tr></thead>
-        <tbody>${tr||`<tr><td colspan="8" class="empty">등록된 수정요청이 없습니다.</td></tr>`}</tbody></table></div>
+        <tbody>${tr||`<tr><td colspan="9" class="empty">등록된 수정요청이 없습니다.</td></tr>`}</tbody></table></div>
       <div class="muted" style="font-size:12px;margin-top:9px">IATF 16949 7.5.3 문서화된 정보의 관리 — 변경 요청·승인 기록 보존</div>
     </div>`;
   bindBar();
@@ -3385,22 +3393,58 @@ function openReq(mno,itemId,preField,preVal){
 async function decide(reqId,ok){
   if(!isAdmin())return alert("승인 권한이 없습니다. 승인자 PIN으로 로그인하세요.");
   const r=S.reqs.find(x=>x.id===reqId); if(!r||r.status!=="pending")return;
-  const lines=(r.changes||[]).map(c=>`${FIELDS[c.field]||c.field}: ${c.old||"—"} → ${c.new||"—"}`).join("\n");
-  const msg=ok?`승인하면 표준서에 반영되고 개정번호가 ${revNo(S.rev+1)} 로 올라갑니다.\n\n${r.mno}호기 ${r.itemName}\n${lines}\n\n진행할까요?`
+  const kd=r.kind||"edit";
+  const lines = kd==="edit"
+    ? (r.changes||[]).map(c=>`${FIELDS[c.field]||c.field}: ${c.old||"—"} → ${c.new||"—"}`).join("\n")
+    : `${KIND[kd]} : ${r.snapshot||r.itemName||""}`;
+  const msg=ok?`승인하면 표준서에 반영되고 개정번호가 ${revNo(S.rev+1)} 로 올라갑니다.\n\n[${KIND[kd]}] ${r.mno}호기 ${r.itemName||""}\n${lines}\n\n진행할까요?`
               :"이 요청을 반려합니다. 진행할까요?";
   if(!confirm(msg))return;
   await commit(()=>{
     const rr=S.reqs.find(x=>x.id===reqId); if(!rr||rr.status!=="pending")return;
-    rr.status=ok?"approved":"rejected"; rr.appBy=(auth&&auth.name)||me||"관리자"; rr.appTs=nowISO();
-    if(ok){
-      const mm=mOf(rr.mno),ii=itOf(mm,rr.itemId); if(!ii)return;
-      S.rev=S.rev+1; S.revDate=today();
+    rr.status=ok?"approved":"rejected"; rr.appBy=uname(); rr.appTs=nowISO();
+    if(!ok) return;
+    const kind=rr.kind||"edit";
+    S.rev=S.rev+1; S.revDate=today();
+    const base={ts:nowISO(),rev:S.rev,mno:rr.mno,reason:rr.reason,by:rr.by,appBy:rr.appBy,reqId:rr.id};
+    if(kind==="edit"){
+      const mm=mOf(rr.mno),ii=itOf(mm,rr.itemId); if(!ii){ S.rev=S.rev-1; return; }
       (rr.changes||[]).forEach(c=>{
         const old=String(ii[c.field]??""); ii[c.field]=c.new;
-        S.logs.unshift({id:uid(),ts:nowISO(),rev:S.rev,act:"req",mno:rr.mno,itemId:rr.itemId,itemName:rr.itemName,
-          field:FIELDS[c.field]||c.field,old,new:c.new,reason:rr.reason,by:rr.by,appBy:rr.appBy,reqId:rr.id});
+        S.logs.unshift({id:uid(),...base,act:"req",itemId:rr.itemId,itemName:rr.itemName,
+          field:FIELDS[c.field]||c.field,old,new:c.new});
       });
-    }});
+    } else if(kind==="add"){
+      const mm=mOf(rr.mno); if(!mm){ S.rev=S.rev-1; return; }
+      const nid="M"+rr.mno+"-"+uid();
+      mm.items.push({id:nid,...(rr.payload||{})});
+      S.logs.unshift({id:uid(),...base,act:"add",itemId:nid,itemName:rr.itemName,
+        field:"기종 등록",old:"",new:rr.snapshot||""});
+    } else if(kind==="del"){
+      const mm=mOf(rr.mno); if(!mm){ S.rev=S.rev-1; return; }
+      const i=mm.items.findIndex(x=>x.id===rr.itemId);
+      if(i<0){ S.rev=S.rev-1; return; }
+      mm.items.splice(i,1);
+      S.logs.unshift({id:uid(),...base,act:"del",itemId:rr.itemId,itemName:rr.itemName,
+        field:"기종 삭제",old:rr.snapshot||"",new:""});
+      if(selId===rr.itemId) selId="";
+    } else if(kind==="machAdd"){
+      const mc=rr.machine||{};
+      if(mOf(mc.no)){ S.rev=S.rev-1; return; }
+      S.machines.push({no:String(mc.no),maker:mc.maker,ton:mc.ton,items:[]});
+      S.machines.sort((a,b)=>(+a.no||999)-(+b.no||999));
+      S.logs.unshift({id:uid(),...base,act:"mach",itemId:"",itemName:"—",
+        field:"설비 등록",old:"",new:rr.snapshot||""});
+    } else if(kind==="machDel"){
+      const no=(rr.machine||{}).no;
+      const i=S.machines.findIndex(x=>x.no===String(no));
+      if(i<0||S.machines[i].items.length){ S.rev=S.rev-1; return; }
+      S.machines.splice(i,1);
+      S.logs.unshift({id:uid(),...base,act:"mach",itemId:"",itemName:"—",
+        field:"설비 삭제",old:rr.snapshot||"",new:""});
+      if(cur&&cur.no===String(no)) cur=S.machines[0];
+    }
+  });
   await ntfyPush(
     ok?`세팅표준 승인 완료 · ${r.mno}호기`:`세팅표준 반려 · ${r.mno}호기`,
     `${r.itemName}\n${lines}\n${ok?`반영 개정 : ${revNo(S.rev)}`:"반려"}\n요청자 : ${r.by} / 처리자 : ${uname()}`,
@@ -3485,14 +3529,15 @@ function saveEdits(){
 const ITF=[["name","기종명(품번)","text"],["dh","다이하이트 (mm)","num"],["mat","재질","text"],
            ["t","두께T (mm)","num"],["w","폭W (mm)","text"],["p","피치P (mm)","text"],["spm","최대SPM","text"]];
 function openItem(mno,itemId){
-  if(!itemId && !isAdmin()) return alert("기종 추가는 승인자만 할 수 있습니다.\n승인자 PIN(4001 · 4003 · 4005)으로 로그인하세요.");
-  if(itemId && !isAdmin()) return alert("기종 수정은 [수정요청]으로 올려 주세요.\n승인자가 승인하면 표준서에 반영됩니다.");
+  if(itemId && !isAdmin()) return alert("기종 값 수정은 [수정요청]으로 올려 주세요.\n승인자가 승인하면 표준서에 반영됩니다.");
   if(!canEdit()) return needLogin();
   const m=mOf(mno), it=itemId?itOf(m,itemId):null, isNew=!it;
-  openModal(`${isNew?"기종 추가":"기종 수정"} · ${esc(m.no)}호기`,
+  const asReq = isNew && !isAdmin();
+  openModal(`${isNew?(asReq?"기종 추가 승인요청":"기종 추가"):"기종 수정"} · ${esc(m.no)}호기`,
     `<div class="info">${isNew?`<b>${esc(m.maker)} ${esc(m.ton)}톤 ${esc(m.no)}호기</b> 에 새 기종을 등록합니다.`
        :`기종 <b>${esc(it.name)}</b> 의 세팅조건을 직접 수정합니다.`}
-     <br>저장하면 개정번호가 ${revNo(S.rev+1)} 로 올라가고 개정이력에 기록됩니다.</div>
+     <br>${asReq?"승인자가 승인하면 표준서에 등록됩니다."
+              :`저장하면 개정번호가 ${revNo(S.rev+1)} 로 올라가고 개정이력에 기록됩니다.`}</div>
      <div class="fld"><label>기종명(품번) <span style="color:var(--red)">*</span></label>
        <input id="itname" value="${esc(it?it.name:"")}" placeholder="예) 1853-515-1"></div>
      <div class="row2">
@@ -3510,7 +3555,8 @@ function openItem(mno,itemId){
      </div>
      <div class="fld"><label>${isNew?"등록":"변경"} 사유 <span style="color:var(--red)">*</span></label>
        <textarea id="itr" placeholder="${isNew?"예) 신규 금형 입고 — 초물 세팅조건 확정":"예) 금형 재연마로 다이하이트 상승 — 초물 실측 3회 평균"}"></textarea></div>`,
-    `<button onclick="closeModal()">취소</button><button class="p" id="itS">${isNew?"등록":"저장"}</button>`);
+    `<button onclick="closeModal()">취소</button>
+     <button class="p" id="itS">${asReq?"승인요청 등록":(isNew?"등록":"저장")}</button>`);
   $("#itS").onclick=async()=>{
     const v={}; ITF.forEach(([k])=>{ v[k]=($("#it"+k).value||"").trim(); });
     const rs=$("#itr").value.trim();
@@ -3522,6 +3568,18 @@ function openItem(mno,itemId){
     const dup=m.items.find(x=>x.name===v.name && x.id!==itemId);
     if(dup && !confirm(`같은 기종명이 이미 있습니다.\n그래도 ${isNew?"등록":"저장"}할까요?`)) return;
     $("#itS").disabled=true;
+    if(asReq){
+      const sum=`DH ${v.dh} · ${v.mat||"-"} · ${v.t||"-"}T · W${v.w||"-"} · P${v.p||"-"} · SPM ${v.spm||"-"}`;
+      await commit(()=>{ S.reqs.unshift({id:uid(),ts:nowISO(),by:uname(),mno:String(mno),itemId:"",
+        itemName:v.name,kind:"add",payload:{...v},changes:[],snapshot:sum,reason:rs,status:"pending"}); });
+      closeModal();
+      const sent=await ntfyPush(`기종 추가 승인요청 · ${m.no}호기`,
+        `${m.maker} ${m.ton}톤 ${m.no}호기\n신규 기종 : ${v.name}\n${sum}\n사유 : ${rs}\n요청자 : ${uname()}\n\n승인 대기 ${pendCnt()}건`,
+        ["heavy_plus_sign","warning"],4,appUrl(m.no));
+      alert(`기종 추가 승인요청을 등록했습니다.\n승인자가 승인하면 표준서에 등록됩니다.`
+        +(sent?"\n\n승인자에게 알림을 보냈습니다.":"\n\n(알림 전송 실패 — 요청은 정상 등록됨)"));
+      return;
+    }
     await commit(()=>{
       const mm=mOf(mno); if(!mm) return;
       S.rev=S.rev+1; S.revDate=today();
@@ -3551,22 +3609,37 @@ function openItem(mno,itemId){
 
 /* ═══ 관리자 : 기종 삭제 ═══ */
 function delItem(mno,itemId){
-  if(!isAdmin()) return alert("기종 삭제는 승인자만 할 수 있습니다.\n승인자 PIN(4001 · 4003 · 4005)으로 로그인하세요.");
+  if(!canEdit()) return needLogin();
   const m=mOf(mno), it=itOf(m,itemId); if(!it) return;
   const ck=S.checks.filter(c=>c.mno===String(mno)&&c.itemId===itemId).length;
-  openModal(`기종 삭제 · ${esc(m.no)}호기`,
-    `<div class="judge n">✕ 표준서에서 삭제합니다<small>개정번호 ${revNo(S.rev+1)}</small></div>
+  const asReq = !isAdmin();
+  openModal(asReq?`기종 삭제 승인요청 · ${esc(m.no)}호기`:`기종 삭제 · ${esc(m.no)}호기`,
+    `<div class="judge n"><span>✕ ${asReq?"삭제를 요청합니다":"표준서에서 삭제합니다"}</span>
+       <small>${asReq?"승인자 승인 후 삭제":`개정번호 ${revNo(S.rev+1)}`}</small></div>
      <div class="info">기종 <b>${esc(it.name)}</b> · 다이하이트 <b>${esc(it.dh)}</b> mm
        <br>${ck?`이 기종의 점검기록 <b>${ck}</b>건은 삭제되지 않고 그대로 보존됩니다.`:"점검기록이 없는 기종입니다."}</div>
      <div class="fld"><label>삭제 사유 <span style="color:var(--red)">*</span></label>
        <textarea id="dlr" placeholder="예) 금형 폐기 — 단종 기종"></textarea></div>`,
-    `<button onclick="closeModal()">취소</button><button class="p" id="dlS" style="background:var(--red);border-color:var(--red)">삭제</button>`);
+    `<button onclick="closeModal()">취소</button>
+     <button class="p" id="dlS" style="background:var(--red);border-color:var(--red)">${asReq?"삭제 승인요청":"삭제"}</button>`);
   $("#dlS").onclick=async()=>{
     const rs=$("#dlr").value.trim();
     if(!rs) return alert("삭제 사유는 필수입니다.");
     if(!auth) return needLogin();
-    if(!confirm(`${it.name} 을 표준서에서 삭제합니다.\n진행할까요?`)) return;
+    if(!confirm(asReq?`${it.name} 삭제를 요청합니다.\n진행할까요?`:`${it.name} 을 표준서에서 삭제합니다.\n진행할까요?`)) return;
     $("#dlS").disabled=true;
+    if(asReq){
+      const sum=`DH ${it.dh} · ${it.mat||"-"} · ${it.t||"-"}T · W${it.w||"-"} · SPM ${it.spm||"-"}`;
+      await commit(()=>{ S.reqs.unshift({id:uid(),ts:nowISO(),by:uname(),mno:String(mno),itemId,
+        itemName:it.name,kind:"del",changes:[],snapshot:sum,reason:rs,status:"pending"}); });
+      closeModal();
+      const sent=await ntfyPush(`기종 삭제 승인요청 · ${m.no}호기`,
+        `${m.maker} ${m.ton}톤 ${m.no}호기\n삭제 대상 : ${it.name}\n${sum}\n사유 : ${rs}\n요청자 : ${uname()}\n\n승인 대기 ${pendCnt()}건`,
+        ["wastebasket","warning"],4,appUrl(m.no));
+      alert(`기종 삭제 승인요청을 등록했습니다.`
+        +(sent?"\n\n승인자에게 알림을 보냈습니다.":"\n\n(알림 전송 실패 — 요청은 정상 등록됨)"));
+      return;
+    }
     await commit(()=>{
       const mm=mOf(mno); if(!mm) return;
       const i=mm.items.findIndex(x=>x.id===itemId); if(i<0) return;
@@ -3585,18 +3658,20 @@ function delItem(mno,itemId){
 
 /* ═══ 관리자 : 설비 관리 ═══ */
 function openMachine(){
-  if(!isAdmin()) return alert("설비 관리는 승인자만 할 수 있습니다.\n승인자 PIN(4001 · 4003 · 4005)으로 로그인하세요.");
+  if(!canEdit()) return needLogin();
   const rows=S.machines.map(m=>`<tr><td><b>${esc(m.no)}호기</b></td><td>${esc(m.maker)}</td>
       <td class="num">${esc(m.ton)}톤</td><td class="num">${m.items.length}종</td>
-      <td><button class="s d" data-mdel="${esc(m.no)}"${m.items.length?' title="등록 기종을 먼저 삭제하세요"':""}>삭제</button></td></tr>`).join("");
-  openModal("설비 관리",
+      <td><button class="s d" data-mdel="${esc(m.no)}"${m.items.length?' title="등록 기종을 먼저 삭제하세요"':""}>${isAdmin()?"삭제":"삭제요청"}</button></td></tr>`).join("");
+  const asReq = !isAdmin();
+  openModal(asReq?"설비 관리 승인요청":"설비 관리",
     `<div class="info">프레스를 추가하거나 삭제합니다. 추가 후 [기종 추가]로 세팅조건을 등록하세요.
-      <br>기종이 등록된 설비는 삭제되지 않습니다.</div>
+      <br>기종이 등록된 설비는 삭제되지 않습니다.
+      ${asReq?"<br><b>승인자가 승인해야 반영됩니다.</b>":""}</div>
      <div class="fl" style="margin-bottom:12px">
        <input id="mno" placeholder="호기 (예: 50)" style="min-width:96px">
        <input id="mmk" placeholder="제조사 (예: 심팩)" style="min-width:110px">
        <input id="mtn" placeholder="톤수 (예: 300)" style="min-width:96px">
-       <button class="g" id="mAdd">＋ 설비 추가</button></div>
+       <button class="g" id="mAdd">${asReq?"＋ 설비 추가 요청":"＋ 설비 추가"}</button></div>
      <div class="tw" style="max-height:44vh"><table><thead><tr><th>호기</th><th>제조사</th>
        <th class="num">톤수</th><th class="num">등록기종</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`,
     `<button onclick="closeModal()">닫기</button>`);
@@ -3608,6 +3683,18 @@ function openMachine(){
     if(mOf(no)) return alert(no+"호기는 이미 등록되어 있습니다.");
     if(!auth) return needLogin();
     $("#mAdd").disabled=true;
+    if(asReq){
+      await commit(()=>{ S.reqs.unshift({id:uid(),ts:nowISO(),by:uname(),mno:String(no),itemId:"",
+        itemName:"—",kind:"machAdd",machine:{no:String(no),maker:mk,ton:tn},changes:[],
+        snapshot:`${mk} ${tn}톤 ${no}호기`,reason:"설비 신규 등록 요청",status:"pending"}); });
+      closeModal();
+      const sent=await ntfyPush(`설비 추가 승인요청`,
+        `신규 설비 : ${mk} ${tn}톤 ${no}호기\n요청자 : ${uname()}\n\n승인 대기 ${pendCnt()}건`,
+        ["factory","warning"],4,appUrl(""));
+      alert(`설비 추가 승인요청을 등록했습니다.`
+        +(sent?"\n\n승인자에게 알림을 보냈습니다.":"\n\n(알림 전송 실패 — 요청은 정상 등록됨)"));
+      return;
+    }
     await commit(()=>{
       S.machines.push({no:String(no),maker:mk,ton:tn,items:[]});
       S.machines.sort((a,b)=>(+a.no||999)-(+b.no||999));
@@ -3620,7 +3707,19 @@ function openMachine(){
   $$("[data-mdel]").forEach(b=> b.onclick=async()=>{
     const no=b.dataset.mdel, m=mOf(no);
     if(m.items.length) return alert(`${no}호기에 기종 ${m.items.length}종이 등록되어 있습니다.\n기종을 먼저 삭제하세요.`);
-    if(!confirm(`${no}호기를 설비 목록에서 삭제합니다.\n진행할까요?`)) return;
+    if(!confirm(asReq?`${no}호기 삭제를 요청합니다.\n진행할까요?`:`${no}호기를 설비 목록에서 삭제합니다.\n진행할까요?`)) return;
+    if(asReq){
+      await commit(()=>{ S.reqs.unshift({id:uid(),ts:nowISO(),by:uname(),mno:no,itemId:"",
+        itemName:"—",kind:"machDel",machine:{no},changes:[],
+        snapshot:`${m.maker} ${m.ton}톤 ${no}호기`,reason:"설비 삭제 요청",status:"pending"}); });
+      closeModal();
+      const sent=await ntfyPush(`설비 삭제 승인요청`,
+        `삭제 대상 : ${m.maker} ${m.ton}톤 ${no}호기\n요청자 : ${uname()}\n\n승인 대기 ${pendCnt()}건`,
+        ["wastebasket","warning"],4,appUrl(""));
+      alert(`설비 삭제 승인요청을 등록했습니다.`
+        +(sent?"\n\n승인자에게 알림을 보냈습니다.":"\n\n(알림 전송 실패 — 요청은 정상 등록됨)"));
+      return;
+    }
     await commit(()=>{
       const i=S.machines.findIndex(x=>x.no===no); if(i<0) return;
       const old=S.machines[i]; S.machines.splice(i,1);
@@ -3654,10 +3753,15 @@ function exportCsv(){
     csvDown("품번별조회",["호기","설비","기종명","다이하이트","재질","두께T","폭W","피치P","최대SPM"],rows);
   }else if(view==="req"){
     const rows=[];
-    S.reqs.forEach(r=>(r.changes||[]).forEach(c=>rows.push([fmtTs(r.ts),r.mno,r.itemName,
-      FIELDS[c.field]||c.field,c.old,c.new,r.reason,r.by,
-      r.status==="pending"?"대기":r.status==="approved"?"승인":"반려",r.appBy||"",r.appTs?fmtTs(r.appTs):""])));
-    csvDown("수정요청",["요청일시","호기","기종명","항목","현재값","변경값","변경사유","요청자","상태","승인자","처리일시"],rows);
+    S.reqs.forEach(r=>{
+      const st=r.status==="pending"?"대기":r.status==="approved"?"승인":"반려";
+      if((r.kind||"edit")==="edit"){
+        (r.changes||[]).forEach(c=>rows.push([fmtTs(r.ts),KIND[r.kind||"edit"],r.mno,r.itemName,
+          FIELDS[c.field]||c.field,c.old,c.new,r.reason,r.by,st,r.appBy||"",r.appTs?fmtTs(r.appTs):""]));
+      } else {
+        rows.push([fmtTs(r.ts),KIND[r.kind],r.mno,r.itemName,"—","","",r.reason,r.by,st,r.appBy||"",r.appTs?fmtTs(r.appTs):""]);
+      }});
+    csvDown("수정요청",["요청일시","종류","호기","기종명","항목","현재값","변경값","변경사유","요청자","상태","승인자","처리일시"],rows);
   }else if(view==="check"){
     csvDown("세팅점검기록",["점검일시","호기","기종명","표준DH","실측DH","편차","판정",
         "표준피치","실제피치","표준SPM","실제SPM","점검자","비고"],
