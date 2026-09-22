@@ -1,0 +1,3348 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>설비별 세팅표준 v1.0 · 태진다이텍</title>
+<script>/* QR encoder (qrcode-generator, MIT) — 내장: 외부망 없이도 생성 */
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript UTF8 Support (optional)
+//
+// Copyright (c) 2011 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+!function(qrcode) {
+
+  //---------------------------------------------------------------------
+  // overwrite qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+
+}(qrcode);
+
+</script>
+<style>
+:root{
+  --bg:#F2F4F7;--panel:#FFFFFF;--ink:#1A2230;--muted:#66717F;--line:#D9DFE7;--line2:#EDF0F4;
+  --steel:#23456E;--steel2:#DCE6F5;--amber:#D9822B;--amber2:#FBEEDC;
+  --green:#2F8F5B;--green2:#DFF3E7;--red:#C8433A;--red2:#F9E2E0;
+  --r:8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+  font-size:14px;line-height:1.45;-webkit-text-size-adjust:100%}
+body{display:flex;min-height:100vh;padding-bottom:env(safe-area-inset-bottom,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+input,select,textarea{background:#fff;border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--steel);outline-offset:0;border-color:var(--steel)}
+input[type=number]{font-variant-numeric:tabular-nums}
+input[readonly]{background:#F7F9FB;color:var(--muted)}
+button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:6px;padding:7px 12px;font-weight:600}
+button:hover{background:#F6F8FB}
+button.p{background:var(--steel);color:#fff;border-color:var(--steel)}
+button.p:hover{background:#1B375A}
+button.g{background:var(--green);color:#fff;border-color:var(--green)}
+button.g:hover{background:#27744A}
+button.d{color:var(--red);border-color:#EBC7C4}
+button.s{padding:4px 8px;font-size:12px}
+button:disabled{opacity:.45;cursor:default}
+h1,h2,h3{margin:0;font-weight:700}
+h2{font-size:18px}
+h3{font-size:14px;color:var(--muted);font-weight:600}
+[hidden]{display:none!important}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.muted{color:var(--muted)}
+
+/* ═══ PC 상단 메가메뉴 ═══ */
+#pcTop{display:none}
+@media(min-width:901px){
+  body{flex-direction:column;padding-top:49px}
+  nav{display:none!important}
+  main{width:100%;flex:1}
+  #pcTop{position:fixed;top:0;left:0;right:0;height:49px;z-index:200;display:flex;align-items:stretch;
+    background:#202833;color:#dce3ec;border-bottom:1px solid #394555}
+  #pcTop .brand{display:flex;align-items:center;gap:9px;padding:0 14px;border-right:1px solid #394555;
+    font-weight:800;color:#fff;white-space:nowrap;cursor:pointer}
+  #pcTop .brand small{color:#8995a7;font-weight:500;font-size:11px}
+  #pcTop .mark{width:28px;height:28px;border-radius:6px;background:#D9822B;color:#202833;display:grid;place-items:center;font-weight:900}
+  #pcTop .navitem{position:relative;height:100%;margin-left:2px}
+  #pcTop .navitem::after{content:"";position:absolute;left:0;right:0;top:100%;height:6px}
+  #pcTop .navitem>button{height:100%;border:0;background:transparent;color:#c7d0dc;padding:0 16px;font-weight:800;
+    font-size:13px;border-bottom:2px solid transparent;cursor:pointer;border-radius:0}
+  #pcTop .navitem:hover>button,#pcTop .navitem.open>button{color:#fff;border-bottom-color:#D9822B;background:#293441}
+  #pcTop .navitem.on>button{color:#fff;border-bottom-color:#D9822B}
+  #pcTop .navitem>button .nb{background:#C8433A;color:#fff;border-radius:9px;font-size:10px;padding:0 5px;margin-left:5px}
+  #pcTop .mega{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);border:1px solid var(--line);
+    box-shadow:0 12px 30px rgba(20,28,40,.22);padding:12px 6px 10px;border-radius:0 0 6px 6px;min-width:214px;z-index:201}
+  #pcTop .navitem:hover>.mega,#pcTop .navitem.open>.mega{display:flex}
+  #pcTop .mega-col{min-width:194px;padding:0 12px;border-right:1px solid var(--line)}
+  #pcTop .mega-col:last-child{border-right:0}
+  #pcTop .mega-col a{display:flex;align-items:center;gap:8px;padding:7px 8px;font-size:13px;color:var(--ink);
+    cursor:pointer;white-space:nowrap;border-radius:4px}
+  #pcTop .mega-col a i{font-style:normal;width:18px;text-align:center;font-size:14px}
+  #pcTop .mega-col a.scr{font-weight:800;color:#16283F;border-bottom:1px solid var(--line);border-radius:4px 4px 0 0;
+    padding:6px 8px 8px;margin-bottom:5px}
+  #pcTop .mega-col a.scr+a.scr{margin-top:6px}
+  #pcTop .mega-col a.scr em{font-style:normal;margin-left:auto;font-size:9.5px;color:#9aa6b7;font-weight:600;letter-spacing:.4px;padding-left:14px}
+  #pcTop .mega-col a:hover{background:#EDF3F9;color:#23456E}
+  #pcTop .mega-col a.on{background:#DCE6F5;color:#23456E;font-weight:800}
+  #pcTop .mega-col a.act{font-weight:600;color:#3d4a58}
+  #pcTop .mega-col a.act.pri{color:#23456E;font-weight:800}
+  #pcTop .pt-st{display:flex;align-items:center;gap:10px;margin-left:auto;padding:0 14px;border-left:1px solid #394555;
+    color:#9aa6b7;font-size:11.5px;white-space:nowrap}
+  #pcTop .pt-st .ver{color:#D9822B;font-weight:800}
+  #pcTop .pt-st select{background:#293441;border:1px solid #394555;color:#dce3ec;border-radius:5px;padding:3px 6px;
+    font-size:12px;width:auto;max-width:104px}
+  #pcTop .pt-st button{background:#293441;border:1px solid #394555;color:#dce3ec;padding:4px 9px;font-size:12px}
+  #pcTop .pt-st button:hover{background:#33404F}
+  #pcTop .pt-st button.on{background:#D9822B;border-color:#D9822B;color:#202833}
+  #hamb{display:none}
+}
+#sync,#sync2{display:inline-flex;align-items:center;gap:6px}
+#sync:before,#sync2:before{content:"";width:8px;height:8px;border-radius:50%;background:#8A97A8;flex:none}
+#sync.ok:before,#sync2.ok:before{background:#4CC38A}
+#sync.err:before,#sync2.err:before{background:#F47067}
+#sync.busy:before,#sync2.busy:before{background:#F5B342}
+
+/* ═══ 모바일 좌측 메뉴 ═══ */
+nav{width:214px;flex:none;background:#1B2C45;color:#DCE6F5;display:flex;flex-direction:column;
+  position:fixed;left:0;top:0;bottom:0;z-index:210;transform:translateX(-100%);transition:transform .18s;overflow-y:auto}
+nav.open{transform:none}
+nav .brand{padding:16px 16px 13px;border-bottom:1px solid rgba(255,255,255,.1);position:relative;
+  padding-top:calc(16px + env(safe-area-inset-top,0px))}
+nav .brand b{display:block;font-size:15px;color:#fff}
+nav .brand span{font-size:11.5px;opacity:.7}
+nav .brand .x{position:absolute;right:8px;top:calc(12px + env(safe-area-inset-top,0px));background:transparent;
+  border:0;color:#9FB3D0;font-size:15px;padding:4px 7px}
+nav a{display:flex;align-items:center;gap:10px;padding:11px 16px;color:inherit;cursor:pointer;
+  border-left:3px solid transparent;font-size:13.5px}
+nav a:hover{background:rgba(255,255,255,.06)}
+nav a.on{background:rgba(255,255,255,.1);border-left-color:var(--amber);color:#fff}
+nav a i{width:22px;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:15px}
+nav a .nb{margin-left:auto;background:#C8433A;color:#fff;border-radius:9px;font-size:10px;font-weight:700;padding:1px 6px}
+nav .nvuser{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.1);display:grid;gap:7px}
+nav .nvuser label{font-size:11.5px;opacity:.7}
+nav .nvuser select{background:#22375A;border:1px solid #33507D;color:#EAF1FA;border-radius:6px;padding:8px 9px;font-size:13.5px}
+nav .nvuser button{background:#22375A;border:1px solid #33507D;color:#EAF1FA;font-size:13px;padding:8px}
+nav .nvuser button:hover{background:#2B4470}
+nav .nvuser button.on{background:var(--amber);border-color:var(--amber);color:#202833}
+nav .foot{padding:14px 16px;font-size:11.5px;opacity:.78;line-height:1.7}
+.navmask{position:fixed;inset:0;background:rgba(10,16,26,.45);z-index:205}
+
+main{flex:1;min-width:0;padding:16px 16px 56px}
+@media(min-width:901px){main{padding:22px 26px 60px}}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.top h2{flex:1;min-width:0}
+.top .sub{font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
+.top .acts{display:flex;gap:7px;flex:none;flex-wrap:wrap}
+@media(max-width:560px){.top .acts{width:100%}.top .acts button{flex:1}}
+#hamb{background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:15px;line-height:1;flex:none}
+
+.panel{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
+.panel h3{margin-bottom:9px}
+.grid{display:grid;gap:10px}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:700px){.g4{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.kpi small{display:block;color:var(--muted);font-size:12px}
+.kpi b{display:block;font-size:26px;font-variant-numeric:tabular-nums;letter-spacing:-.5px;margin-top:2px}
+.kpi em{font-style:normal;font-size:12px;color:var(--muted)}
+.kpi.warn b{color:var(--amber)}.kpi.bad b{color:var(--red)}.kpi.good b{color:var(--green)}
+
+.fl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fl>*{width:auto}
+.fl input,.fl select{width:auto;min-width:118px}
+.fl .grow{flex:1;min-width:120px}
+.fl label{font-size:12px;color:var(--muted);white-space:nowrap}
+
+.tw{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:6px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line2);text-align:left;white-space:nowrap}
+th{background:#F7F9FB;color:var(--muted);font-weight:600;position:sticky;top:0;z-index:1}
+th.num,td.num{text-align:right}
+tr:hover td{background:#FAFBFD}
+tr.sel td{background:#EEF4FB}
+td.dh{font-variant-numeric:tabular-nums;text-align:right;font-weight:700;color:var(--steel)}
+.tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600;background:var(--steel2);color:var(--steel)}
+.tag.a{background:var(--amber2);color:#9A5A16}
+.tag.g{background:var(--green2);color:#1E6B41}
+.tag.r{background:var(--red2);color:#9C2F27}
+.tag.d{background:#F1F3F6;color:#8A94A2}
+.empty{padding:36px;text-align:center;color:var(--muted);white-space:normal}
+
+.readout{display:grid;grid-template-columns:repeat(4,1fr);background:#1B2C45;color:#fff;border-radius:var(--r);
+  padding:14px 18px;margin:0 0 14px;gap:10px}
+.readout div small{display:block;font-size:12px;opacity:.7}
+.readout div b{font-size:28px;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.readout div b.a{color:#F5B342}.readout div b.r{color:#F47067}.readout div b.g{color:#4CC38A}
+@media(max-width:700px){.readout{grid-template-columns:repeat(2,1fr)}.readout div b{font-size:23px}}
+
+.fieldbar{display:flex;align-items:center;gap:14px;background:#1B2C45;color:#fff;border-radius:var(--r);
+  padding:13px 16px;margin-bottom:14px;flex-wrap:wrap}
+.fieldbar .no{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1}
+.fieldbar .no span{font-size:14px;font-weight:600;opacity:.8;margin-left:2px}
+.fieldbar .tx{font-size:12.5px;opacity:.85;line-height:1.5}
+.fieldbar .rv{margin-left:auto;background:#D9822B;color:#202833;font-weight:800;font-size:12px;
+  padding:4px 9px;border-radius:6px;white-space:nowrap}
+
+.cards{display:none}
+.citem{border-bottom:1px solid var(--line2);padding:11px 12px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline}
+.citem:last-child{border-bottom:0}
+.cname{font-size:15px;font-weight:700;letter-spacing:-.2px;word-break:break-all}
+.cdh{font-size:23px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--steel);text-align:right;
+  line-height:1.1;white-space:nowrap;letter-spacing:-.5px}
+.cdh small{font-size:11px;font-weight:600;color:var(--muted)}
+.cspec{grid-column:1;font-size:12px;color:var(--muted);line-height:1.5}
+.cact{grid-column:1/-1;display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+@media(max-width:700px){
+  .panel.fold h3{cursor:pointer;user-select:none}
+  .panel.fold h3:after{content:" ▸";font-size:10px;color:var(--muted)}
+  .panel.fold.open h3:after{content:" ▾"}
+  .panel.fold:not(.open) .fl{display:none}
+  .panel.fold:not(.open){margin-bottom:10px}
+  .tw table{display:none}
+  .cards{display:block}
+  .tw{max-height:none}
+}
+
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+.qcard{background:#fff;color:#111;border:2px solid #1A2230;border-radius:8px;padding:10px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:5px;break-inside:avoid}
+.qcard .qn{font-size:26px;font-weight:800;line-height:1;letter-spacing:-1px}
+.qcard .qm{font-size:11.5px;color:#5A6472;margin-top:-2px}
+.qcard .qb svg{display:block;width:104px;height:104px;shape-rendering:crispEdges}
+.qcard .qt{font-size:10.5px;font-weight:700;border-top:1px solid #D9DFE7;padding-top:5px;width:100%;color:#3d4a58}
+
+.mask{position:fixed;inset:0;background:rgba(20,28,40,.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:14px}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:490px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 20px 50px rgba(20,28,40,.3)}
+.mh{padding:14px 16px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;background:#fff;z-index:2}
+.mh b{font-size:15px}
+.mh .x{margin-left:auto;border:0;background:transparent;font-size:17px;color:var(--muted);padding:2px 6px}
+.mb{padding:14px 16px}
+.mf{padding:12px 16px 16px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.fld{margin-bottom:11px}
+.fld label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.fld textarea{min-height:62px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:560px){.row2{grid-template-columns:1fr}}
+.info{background:#F7F9FB;border:1px solid var(--line);border-left:3px solid var(--steel);border-radius:6px;
+  padding:10px 12px;font-size:13px;color:var(--muted);margin-bottom:12px}
+.info b{color:var(--ink);font-variant-numeric:tabular-nums}
+.judge{border-radius:8px;padding:12px 14px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.judge.o{background:var(--green2);border:1px solid #A9D5BF;color:#1E6B41}
+.judge.n{background:var(--red2);border:1px solid #E8B4AF;color:#9C2F27}
+.judge small{font-weight:600;font-size:12px;opacity:.9;font-variant-numeric:tabular-nums}
+
+@media print{
+  #pcTop,nav,.navmask,.noprint,#hamb,.cards,.fieldbar{display:none!important}
+  body{display:block;padding:0;background:#fff;font-size:12px}
+  main{padding:0}
+  .panel{border:0;padding:0;margin:0 0 8px}
+  .tw{max-height:none;border:0;overflow:visible}
+  .tw table{display:table!important}
+  th{position:static;background:#F0F2F5;color:#333}
+  tr:hover td{background:transparent}
+  .readout{background:#fff;color:#000;border:1px solid #999;padding:8px 12px}
+  .readout div b{font-size:19px}
+  .readout div b.a,.readout div b.r,.readout div b.g{color:#000}
+  .qgrid{grid-template-columns:repeat(3,1fr)}
+  tr{break-inside:avoid}
+  @page{size:A4 portrait;margin:12mm}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="pcTop">
+  <a class="brand" data-v="std"><span class="mark">T</span><span>⌂ 설비별 세팅표준&nbsp;<small>태진다이텍 품질관리</small></span></a>
+
+  <div class="navitem" data-g="a"><button type="button">세팅표준 ▾</button><div class="mega">
+    <div class="mega-col">
+      <a class="scr" data-v="std"><i>▤</i>설비별 표준서<em>STANDARD</em></a>
+      <a class="act pri" data-fn="print"><i>🖨</i>표준서 인쇄</a>
+      <a class="act" data-fn="csv"><i>▦</i>엑셀 내보내기</a>
+    </div>
+    <div class="mega-col">
+      <a class="scr" data-v="search"><i>🔍</i>품번별 조회<em>SEARCH</em></a>
+    </div>
+  </div></div>
+
+  <div class="navitem" data-g="b"><button type="button">점검 · 승인 ▾</button><div class="mega">
+    <div class="mega-col">
+      <a class="scr" data-v="req"><i>✎</i>수정요청 승인<em>APPROVAL</em></a>
+      <a class="scr" data-v="check"><i>✓</i>세팅 점검기록<em>VERIFY</em></a>
+      <a class="scr" data-v="hist"><i>⟲</i>개정이력<em>REVISION</em></a>
+    </div>
+  </div></div>
+
+  <div class="navitem" data-g="c"><button type="button">기준정보 ▾</button><div class="mega">
+    <div class="mega-col">
+      <a class="scr" data-v="qr"><i>▣</i>QR 라벨 발행<em>QR LABEL</em></a>
+      <a class="act" data-fn="print"><i>🖨</i>라벨 인쇄</a>
+    </div>
+  </div></div>
+
+  <div class="pt-st">
+    <span id="sync2">확인 중</span>
+    <select id="me2" title="사용자"></select>
+    <button id="admin2">관리자</button>
+    <span class="ver">v1.0</span>
+  </div>
+</div>
+
+<nav id="nav">
+  <div class="brand"><b>설비별 세팅표준</b><span>태진다이텍 · 프레스 세팅조건</span>
+    <button type="button" class="x" id="navX">✕</button></div>
+  <a data-v="std"><i>▤</i>설비별 표준서</a>
+  <a data-v="search"><i>🔍</i>품번별 조회</a>
+  <a data-v="req"><i>✎</i>수정요청 승인<span class="nb" id="nb1" hidden>0</span></a>
+  <a data-v="check"><i>✓</i>세팅 점검기록</a>
+  <a data-v="hist"><i>⟲</i>개정이력</a>
+  <a data-v="qr"><i>▣</i>QR 라벨 발행</a>
+  <div class="nvuser">
+    <label>작업자</label>
+    <select id="me1"></select>
+    <button id="admin1">관리자 인증</button>
+  </div>
+  <div class="foot"><span id="sync">확인 중</span><br><span id="cnt"></span><br><span>v1.0</span></div>
+</nav>
+
+<main id="main"></main>
+<div id="modalHost"></div>
+
+<script>
+/* ═══════════ 설정 ═══════════ */
+const SB_URL="https://ebthltdmxpzlkfwvdloz.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVidGhsdGRteHB6bGtmd3ZkbG96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNTcxNTQsImV4cCI6MjA5MDczMzE1NH0.bXqNpOtDMCFjuZROrIDm_3o0kHmNESs7EHOgGnFCxAM";
+const KV_KEY="tj_setting_std_v1";
+const ADMIN_PIN="2580";          /* 관리자(승인) PIN */
+const USERS=["김상기","허미정","문수진","오현민","강병주","강창구","기타"];
+const SEED={"machines":[{"no":"1","maker":"쌍용","ton":"200","items":[{"id":"M1-01","name":"T1XX","dh":"448.7","mat":"304","t":"0.5","w":"126","p":"120","spm":"20~25"},{"id":"M1-02","name":"48338-2H010","dh":"462.9","mat":"SPCC","t":"1","w":"94","p":"94","spm":"25"},{"id":"M1-03","name":"45631-26010","dh":"459.2","mat":"SPCC","t":"1.4","w":"190","p":"185","spm":"25"},{"id":"M1-04","name":"45524-26210","dh":"463.8","mat":"SPCC","t":"0.8","w":"102","p":"102","spm":"25"},{"id":"M1-05","name":"45624-2F010(LOWER)","dh":"464.4","mat":"SPCC","t":"1.6","w":"160","p":"129","spm":"25"},{"id":"M1-06","name":"45624-2F010(UPPER)","dh":"463.6","mat":"SPCC","t":"1","w":"160","p":"128","spm":"25"},{"id":"M1-07","name":"1781-0001-01","dh":"409.4","mat":"SPCC","t":"0.6","w":"110","p":"101","spm":"30~35"},{"id":"M1-08","name":"1979-0051-01","dh":"399.1","mat":"SPCC","t":"0.8","w":"120","p":"110","spm":"30~35"},{"id":"M1-09","name":"1888-0005","dh":"408.2","mat":"304 J1","t":"0.5","w":"126","p":"118","spm":"20~25"},{"id":"M1-10","name":"1976-0004-01","dh":"398.8","mat":"SPCC","t":"0.6","w":"102","p":"92","spm":"30~35"},{"id":"M1-11","name":"1969-0030-01","dh":"419.9","mat":"SPCC","t":"0.6","w":"102","p":"92","spm":"30~35"},{"id":"M1-12","name":"1946-00053-01","dh":"418.9","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"30~35"}]},{"no":"2","maker":"심팩","ton":"200","items":[{"id":"M2-01","name":"45524-26210","dh":"466.5","mat":"SPCC","t":"0.8","w":"102","p":"102","spm":"25"},{"id":"M2-02","name":"48338-2H010","dh":"465.7","mat":"SPCC","t":"1","w":"94","p":"94","spm":"25"},{"id":"M2-03","name":"45624-2F010 (LOWER)","dh":"467.3","mat":"SPCC","t":"1.6","w":"160","p":"129","spm":"25"},{"id":"M2-04","name":"45624-2F010     (UPPER)","dh":"466.5","mat":"SPCC","t":"1","w":"126","p":"128","spm":"25"},{"id":"M2-05","name":"45631-26010              (SEMI-PRO)","dh":"464.7","mat":"SPCC","t":"1.4","w":"190","p":"185","spm":"25"},{"id":"M2-06","name":"45631-26010","dh":"460.9","mat":"SPCC","t":"1.4","w":"190","p":"185","spm":"25"}]},{"no":"3","maker":"심팩","ton":"150","items":[{"id":"M3-01","name":"1968-0016-02","dh":"386","mat":"430-2B","t":"0.6","w":"90","p":"88","spm":"35~40"},{"id":"M3-02","name":"1945-349-02","dh":"35901","mat":"430-2B","t":"0.6","w":"62","p":"60","spm":"50~55"},{"id":"M3-03","name":"1515-196","dh":"376.4","mat":"SPCC","t":"0.9","w":"64","p":"55","spm":"45~50"}]},{"no":"4","maker":"심팩","ton":"150","items":[{"id":"M4-01","name":"1958-365-1","dh":"372.7","mat":"SPCC","t":"0.6","w":"74","p":"72","spm":"35~40"},{"id":"M4-02","name":"1967-392","dh":"375.4","mat":"SPCC","t":"0.6","w":"84","p":"80","spm":"35~40"},{"id":"M4-03","name":"1952-346-2","dh":"355.5","mat":"430-BA","t":"0.6","w":"66","p":"66","spm":"25~30"},{"id":"M4-04","name":"1853-586","dh":"385.2","mat":"304-BA","t":"0.5","w":"73","p":"72","spm":"35~40"},{"id":"M4-05","name":"1856-627-2","dh":"358.7","mat":"430-BA","t":"0.6","w":"72","p":"70","spm":"25~30"},{"id":"M4-06","name":"1968-364-1","dh":"357","mat":"SPCC","t":"0.6","w":"86","p":"84","spm":"35~40"},{"id":"M4-07","name":"1861-597","dh":"348.4","mat":"430-BA","t":"0.6","w":"80","p":"78","spm":"35~40"},{"id":"M4-08","name":"1945-349-2","dh":"359","mat":"430-BA","t":"0.6","w":"62","p":"60","spm":"25~30"},{"id":"M4-09","name":"1862-0041-21","dh":"387.4","mat":"430-BA","t":"0.6","w":"80","p":"78","spm":"25~30"},{"id":"M4-10","name":"1960-0031-21","dh":"387.5","mat":"430-BA","t":"0.6","w":"80","p":"77.9","spm":"25~30"},{"id":"M4-11","name":"1862-0042-21","dh":"387.2","mat":"SUS430","t":"0.6","w":"80","p":"78","spm":"20~25"}]},{"no":"5","maker":"심팩","ton":"110","items":[{"id":"M5-01","name":"1853-515-1","dh":"364.8","mat":"SPCC","t":"0.8","w":"80","p":"78","spm":"35~40"},{"id":"M5-02","name":"1965-326-1","dh":"298.3","mat":"SPCC","t":"0.8","w":"100","p":"90","spm":"35~40"},{"id":"M5-03","name":"1553-101-1","dh":"341.3","mat":"SPCC","t":"0.8","w":"80","p":"76","spm":"35~40"},{"id":"M5-04","name":"1807-653","dh":"299.6","mat":"SPCC","t":"0.6","w":"114","p":"28","spm":"20~25"},{"id":"M5-05","name":"1947-353","dh":"303.8","mat":"SPCC","t":"0.6","w":"74","p":"72","spm":"35~40"},{"id":"M5-06","name":"1755-296","dh":"273.2","mat":"SPCC","t":"0.5","w":"72","p":"69.5","spm":"30~35"},{"id":"M5-07","name":"1982-371","dh":"294.7","mat":"SPCC","t":"0.8","w":"108","p":"107.5","spm":"25"}]},{"no":"6","maker":"심팩","ton":"110","items":[{"id":"M6-01","name":"1853-515-1","dh":"365","mat":"SPCC","t":"0.8","w":"80","p":"78","spm":"20~25"},{"id":"M6-02","name":"1945-349-1","dh":"301.3","mat":"SPCC","t":"0.6","w":"68","p":"66","spm":"35~40"},{"id":"M6-03","name":"1982-371","dh":"293.9","mat":"SPCC","t":"0.8","w":"108","p":"107.5","spm":"25~30"},{"id":"M6-04","name":"1970-363","dh":"312.6","mat":"SPCC","t":"0.6","w":"94","p":"93.5","spm":"35~40"},{"id":"M6-05","name":"1970-372-1","dh":"312.3","mat":"SPCC","t":"0.8","w":"94","p":"93.5","spm":"35~40"},{"id":"M6-06","name":"1862-651-01","dh":"349.6","mat":"SPCC","t":"0.6","w":"90","p":"85.5","spm":"30~35"}]},{"no":"11","maker":"심팩","ton":"80","items":[{"id":"M11-01","name":"1547-102-1","dh":"315.7","mat":"SPCC","t":"0.6","w":"70","p":"68","spm":"25~30"}]},{"no":"28","maker":"국일","ton":"200","items":[{"id":"M28-01","name":"1515-196","dh":"379","mat":"SPCC","t":"0.9","w":"64","p":"55","spm":"35~40"}]},{"no":"29","maker":"국일","ton":"200","items":[{"id":"M29-01","name":"1515-196","dh":"378.5","mat":"SPCC","t":"0.9","w":"64","p":"55","spm":"35~40"},{"id":"M29-02","name":"45631-26010","dh":"460.5","mat":"","t":"","w":"","p":"","spm":""}]},{"no":"30","maker":"국일","ton":"160","items":[{"id":"M30-01","name":"1951-386","dh":"417.5","mat":"SPCC","t":"0.6","w":"76","p":"66","spm":"30~35"}]},{"no":"31","maker":"심팩","ton":"150","items":[{"id":"M31-01","name":"1858-619","dh":"335.2","mat":"430-BA","t":"0.6","w":"88","p":"74","spm":"35~40"},{"id":"M31-02","name":"1952-0052-21","dh":"392.1","mat":"430-2B","t":"0.6","w":"70","p":"68","spm":"25~30"},{"id":"M31-03","name":"1963-0055-02","dh":"387.2","mat":"430-2B","t":"0.6","w":"84","p":"82","spm":"25~30"},{"id":"M31-04","name":"1960-0031-21","dh":"387.9","mat":"430-2B","t":"0.6","w":"80","p":"78","spm":"25~30"},{"id":"M31-05","name":"1862-651","dh":"348.6","mat":"SPCC","t":"0.6","w":"90","p":"86","spm":"25~30"},{"id":"M31-06","name":"1952-0056-21","dh":"392.6","mat":"430","t":"0.6","w":"70","p":"68","spm":"20~30"},{"id":"M31-07","name":"※단발작업시 피더기 릴리징 5로 작업","dh":"","mat":"","t":"","w":"","p":"","spm":""}]},{"no":"32","maker":"심팩","ton":"200","items":[{"id":"M32-01","name":"1861-596","dh":"400.4","mat":"SPCC","t":"0.6","w":"94","p":"92","spm":"35~40"},{"id":"M32-02","name":"1951-386","dh":"418.6","mat":"SPCC","t":"0.6","w":"76","p":"66","spm":"35~40"},{"id":"M32-03","name":"1967-391","dh":"408.5","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"35~40"}]},{"no":"33","maker":"심팩","ton":"250","items":[{"id":"M33-01","name":"1973-325","dh":"383.8","mat":"SPCC","t":"0.6","w":"125","p":"107","spm":"30~35"},{"id":"M33-02","name":"1972-383","dh":"409.5","mat":"SPCC","t":"0.6","w":"114","p":"104","spm":"30~35"},{"id":"M33-03","name":"1967-391","dh":"407.8","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"30~35"},{"id":"M33-04","name":"1781-0001-00","dh":"408","mat":"SPCC","t":"0.6","w":"110","p":"102","spm":"30~35"},{"id":"M33-05","name":"1959-0024-01","dh":"428.5","mat":"SPCC","t":"0.6","w":"86","p":"84","spm":"25~30"},{"id":"M33-06","name":"1974-0023-01","dh":"399.3","mat":"SPCC","t":"0.6","w":"100","p":"98","spm":"25~30"},{"id":"M33-07","name":"1963-0055-01","dh":"397.6","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M33-08","name":"1962-0030","dh":"387.5","mat":"SPCC","t":"0.6","w":"94","p":"84","spm":"30~35"},{"id":"M33-09","name":"1946-0053-01","dh":"418","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"30~35"},{"id":"M33-10","name":"1960-0031-01","dh":"418","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M33-11","name":"1969-0030-01","dh":"418.7","mat":"SPCC","t":"0.6","w":"102","p":"93","spm":"30~35"},{"id":"M33-12","name":"1862-0041(0042)-01","dh":"417.3","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M33-13","name":"1968-0016-01","dh":"398","mat":"SPCC","t":"0.6","w":"92","p":"90","spm":"30~35"},{"id":"M33-14","name":"MAG624828","dh":"474.2","mat":"SPCC","t":"2.3","w":"46","p":"46","spm":"35~40"}]},{"no":"34","maker":"심팩","ton":"250","items":[{"id":"M34-01","name":"1967-391","dh":"406.2","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"35~40"},{"id":"M34-02","name":"1973-325","dh":"381.9","mat":"SPCC","t":"0.6","w":"125","p":"107","spm":"30~35"},{"id":"M34-03","name":"1968-0016-01","dh":"396.6","mat":"SPCC","t":"0.6","w":"92","p":"90","spm":"25~30"},{"id":"M34-04","name":"1962-0030","dh":"387.5","mat":"SPCC","t":"0.6","w":"94","p":"84","spm":"30~35"},{"id":"M34-05","name":"1871-0043-01","dh":"398.8","mat":"SPCC","t":"0.6","w":"100","p":"98","spm":"25~30"},{"id":"M34-06","name":"1873-0045-01","dh":"400.4","mat":"SPCC","t":"0.8","w":"120","p":"110","spm":"25~30"},{"id":"M34-07","name":"1888-0005","dh":"406.5","mat":"304","t":"0.5","w":"126","p":"117","spm":"20~25"},{"id":"M34-08","name":"1979-0051-01","dh":"397.8","mat":"SPCC","t":"0.8","w":"120","p":"110","spm":"30~35"},{"id":"M34-09","name":"1946-0053-01","dh":"417.6","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"30~35"},{"id":"M34-10","name":"1969-0030-01","dh":"418","mat":"SPCC","t":"0.6","w":"102","p":"92","spm":"30~35"},{"id":"M34-11","name":"1976-0004-01","dh":"397.8","mat":"SPCC","t":"0.6","w":"102","p":"90","spm":"30~35"},{"id":"M34-12","name":"1974-0023-01","dh":"399.1","mat":"SPCC","t":"0.6","w":"100","p":"98","spm":"30~35"},{"id":"M34-13","name":"1781-0001-01","dh":"407.6","mat":"SPCC","t":"0.6","w":"110","p":"102","spm":"35~40"},{"id":"M34-14","name":"1862-0041-01","dh":"417","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M34-15","name":"1960-0031-01","dh":"417.6","mat":"SPCC","t":"0.6","w":"90","p":"87.8","spm":"30~35"}]},{"no":"35","maker":"심팩","ton":"250","items":[{"id":"M35-01","name":"1960-0031-01","dh":"417.3","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M35-02","name":"1969-0030-01","dh":"419.2","mat":"SPCC","t":"0.6","w":"102","p":"93","spm":"30~35"},{"id":"M35-03","name":"1862-0041-01","dh":"417.6","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M35-04","name":"1979-0051-01","dh":"398","mat":"SPCC","t":"0.8","w":"120","p":"109","spm":"30~35"},{"id":"M35-05","name":"1962-0030","dh":"388.1","mat":"SPCC","t":"0.6","w":"94","p":"84","spm":"35~40"},{"id":"M35-06","name":"1946-0053-01","dh":"418.3","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"35~40"}]},{"no":"36","maker":"심팩","ton":"300","items":[{"id":"M36-01","name":"Race way   1106","dh":"497.7","mat":"S55CM","t":"1.01","w":"125","p":"116","spm":"35~40"},{"id":"M36-02","name":"Race way   1165","dh":"487.6","mat":"S55CM","t":"1.01","w":"134","p":"124","spm":"35~40"},{"id":"M36-03","name":"Race way   1113","dh":"488.6","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M36-04","name":"Race way   1179","dh":"488.1","mat":"C67SCM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M36-05","name":"Race way   1113-2","dh":"496.7","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M36-06","name":"AB-3248-SC-01\n(9BUX)","dh":"489.5","mat":"3042B","t":"0.5","w":"118","p":"108","spm":"22~24"},{"id":"M36-07","name":"Race way   1106-2","dh":"494","mat":"S55CM","t":"1.01","w":"125","p":"116","spm":"35~40"}]},{"no":"37","maker":"국일","ton":"200","items":[{"id":"M37-01","name":"1853-515-1","dh":"403","mat":"SPCC","t":"0.8","w":"80","p":"78","spm":"30~35"},{"id":"M37-02","name":"1853-515-2","dh":"368.5","mat":"304-2B","t":"0.5","w":"75","p":"75","spm":"30~35"},{"id":"M37-03","name":"1869-621","dh":"372.2","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M37-04","name":"1958-365-2(신형)","dh":"448.6","mat":"304-2B","t":"0.6","w":"80","p":"78","spm":"25~30"},{"id":"M37-05","name":"1968-364-1","dh":"359.3","mat":"SPCC","t":"0.6","w":"74","p":"72","spm":"30~35"},{"id":"M37-06","name":"1968-364-2(신형)","dh":"448.5","mat":"304-2B","t":"0.6","w":"93","p":"91","spm":"25~30"},{"id":"M37-07","name":"1974-0023-21","dh":"931.1","mat":"430-2B","t":"0.6","w":"94","p":"92","spm":"24~28"},{"id":"M37-08","name":"1862-651","dh":"373.2","mat":"SPCC","t":"0.6","w":"90","p":"86","spm":"30~35"},{"id":"M37-09","name":"1963-0055-01","dh":"398.5","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M37-10","name":"1967-391","dh":"407.7","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"30~35"},{"id":"M37-11","name":"1861-596","dh":"400.3","mat":"SPCC","t":"0.6","w":"94","p":"92","spm":"30~35"},{"id":"M37-12","name":"1551-189","dh":"408","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M37-13","name":"1969-0030-01","dh":"419.8","mat":"SPCC","t":"0.6","w":"102","p":"93","spm":"30~35"},{"id":"M37-14","name":"1862-0041-01","dh":"417.8","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~32"},{"id":"M37-15","name":"1657-127","dh":"448","mat":"SPCC","t":"1.2","w":"90","p":"85","spm":"30~35"},{"id":"M37-16","name":"1781-0001-00","dh":"407.8","mat":"SPCC","t":"0.6","w":"110","p":"102","spm":"30~35"},{"id":"M37-17","name":"1952-367-2","dh":"460.1","mat":"304-2B","t":"0.6","w":"74","p":"72","spm":"25~30"}]},{"no":"38","maker":"국일","ton":"250","items":[{"id":"M38-01","name":"1972-383","dh":"461.6","mat":"SPCC","t":"0.6","w":"114","p":"104","spm":"30~35"},{"id":"M38-02","name":"1952-0056-01","dh":"456.8","mat":"SPCC","t":"0.6","w":"76","p":"74","spm":"25~30"}]},{"no":"39","maker":"국일","ton":"250","items":[{"id":"M39-01","name":"MJH637370","dh":"474","mat":"304-2B","t":"0.8","w":"64","p":"58","spm":"25~30"},{"id":"M39-02","name":"MAG624828","dh":"472","mat":"SPCC","t":"2.3","w":"46","p":"40","spm":"35~40"},{"id":"M39-03","name":"1862-0041-01","dh":"496","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M39-04","name":"1968-364-2","dh":"467","mat":"304-2B","t":"0.6","w":"93","p":"93","spm":"30~35"},{"id":"M39-05","name":"1960-0031-01","dh":"468.4","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"}]},{"no":"40","maker":"심팩","ton":"200","items":[{"id":"M40-01","name":"1551-189","dh":"405.3","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"35~40"},{"id":"M40-02","name":"1959-0024-21","dh":"397.1","mat":"430-2B","t":"0.6","w":"82","p":"80","spm":"35~40"},{"id":"M40-03","name":"1657-127","dh":"446","mat":"SPCC","t":"1.2","w":"90","p":"85","spm":"35~40"},{"id":"M40-04","name":"1873-622-2","dh":"375.6","mat":"430-BA","t":"0.6","w":"92","p":"90","spm":"35~40"},{"id":"M40-05","name":"1974-0023-21","dh":"388.8","mat":"430-2B","t":"0.6","w":"94","p":"92","spm":"24~28"},{"id":"M40-06","name":"1976-04-01 00:00:00","dh":"396.4","mat":"SPCC","t":"0.6","w":"102","p":"90","spm":"35~40"},{"id":"M40-07","name":"1970-372-2","dh":"410.5","mat":"430-BA","t":"0.6","w":"86","p":"84","spm":"35~40"},{"id":"M40-08","name":"1965-326-2","dh":"413.8","mat":"430-BA","t":"0.6","w":"90","p":"87","spm":"35~40"},{"id":"M40-09","name":"1967-392","dh":"375.8","mat":"SPCC","t":"0.6","w":"84","p":"80","spm":"35~40"},{"id":"M40-10","name":"1660-131","dh":"378.3","mat":"430-BA","t":"0.6","w":"78","p":"76","spm":"35~40"},{"id":"M40-11","name":"1973-325","dh":"381.6","mat":"SPCC","t":"0.6","w":"125","p":"107","spm":"35~40"},{"id":"M40-12","name":"1869-621","dh":"369","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"35~40"},{"id":"M40-13","name":"1862-0042-21","dh":"387.2","mat":"430-2B","t":"0.6","w":"80","p":"78","spm":"20~25"},{"id":"M40-14","name":"1968-364","dh":"357","mat":"SPCC","t":"0.6","w":"86","p":"84","spm":"30~35"},{"id":"M40-15","name":"1862-0041-21","dh":"387.4","mat":"430-2B","t":"0.6","w":"80","p":"78","spm":"20~25"}]},{"no":"41","maker":"국일","ton":"200","items":[{"id":"M41-01","name":"1657-130-2","dh":"389","mat":"430-BA","t":"0.8","w":"78","p":"76","spm":"30~35"},{"id":"M41-02","name":"1952-367-2(신형)","dh":"460.5","mat":"304-2B","t":"0.6","w":"74","p":"72","spm":"30~35"},{"id":"M41-03","name":"1861-596","dh":"400.5","mat":"SPCC","t":"0.6","w":"94","p":"92","spm":"35~40"},{"id":"M41-04","name":"1837-0033-01","dh":"409.6","mat":"SPCC","t":"1","w":"70","p":"68","spm":"30~35"},{"id":"M41-05","name":"1952-0056-01","dh":"402.1","mat":"SPCC","t":"0.6","w":"76","p":"74","spm":"25~30"},{"id":"M41-06","name":"1946-0053-01","dh":"389","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"35~40"},{"id":"M41-07","name":"1972-383","dh":"412.1","mat":"SPCC","t":"0.6","w":"114","p":"104","spm":"35~40"}]},{"no":"42","maker":"AIDA","ton":"200","items":[{"id":"M42-01","name":"1952-367-2","dh":"380.25","mat":"304-2B","t":"0.6","w":"76","p":"74","spm":"50"},{"id":"M42-02","name":"1752-293-2","dh":"367.7","mat":"430-2B","t":"0.5","w":"74","p":"70","spm":"50"}]},{"no":"43","maker":"국일","ton":"800","items":[{"id":"M43-01","name":"54610-C1000 (JF)","dh":"689.7","mat":"SPFH590","t":"3.2","w":"284","p":"자동","spm":"18~22"},{"id":"M43-02","name":"54610-D3500 (SV)","dh":"677.2","mat":"SPFH590","t":"3.6","w":"283","p":"자동","spm":"18~22"},{"id":"M43-03","name":"54610-D3000 (TL)","dh":"684.3","mat":"PHT590F","t":"3.6","w":"284.5","p":"자동","spm":"16~18"},{"id":"M43-04","name":"B171000-0013-00(MQ4)","dh":"678","mat":"SPFH590-P","t":"3.2","w":"사급","p":"자동","spm":"18~22"},{"id":"M43-05","name":"(UMA)","dh":"","mat":"","t":"","w":"329.5","p":"자동","spm":"16~18"}]},{"no":"45","maker":"심팩","ton":"300","items":[{"id":"M45-01","name":"Race way   1106","dh":"492.6","mat":"S55CM","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M45-02","name":"Race way   1113","dh":"487.3","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M45-03","name":"Race way   1179","dh":"488.2","mat":"C67SCM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M45-04","name":"Race way   1156","dh":"488.3","mat":"C67SCM","t":"1.25","w":"146","p":"136","spm":"35~40"},{"id":"M45-05","name":"Race way   1159","dh":"488","mat":"C55CM","t":"1.01","w":"144","p":"134","spm":"35~40"},{"id":"M45-06","name":"Race way   1113-2","dh":"495.7","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"}]},{"no":"46","maker":"심팩","ton":"300","items":[{"id":"M46-01","name":"Race way   1113D","dh":"491.2","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M46-02","name":"AB3248-SC-01\n(9BUX)","dh":"487.6","mat":"304-2B","t":"0.5","w":"118","p":"107.5","spm":"22~24"},{"id":"M46-03","name":"Race way   1113-2","dh":"494.4","mat":"S70C","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M46-04","name":"Race way   1179-2","dh":"488.1","mat":"C67CM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M46-05","name":"Race way   1159","dh":"487.4","mat":"S55CM-S","t":"1.01","w":"141","p":"134","spm":"35~40"},{"id":"M46-06","name":"Race way   1156","dh":"486.1","mat":"C67S","t":"1.25","w":"143","p":"136","spm":"35~40"},{"id":"M46-07","name":"Race way   1106","dh":"495.5","mat":"S55C","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M46-08","name":"Race way   1179","dh":"487","mat":"C67S","t":"1.25","w":"137","p":"130","spm":"38~40"},{"id":"M46-09","name":"Race way   1165","dh":"487.5","mat":"S55C","t":"1.01","w":"134","p":"124","spm":"35~40"},{"id":"M46-10","name":"T1 XX","dh":"497","mat":"304-2B","t":"0.5","w":"126","p":"120","spm":"20~25"},{"id":"M46-11","name":"Race way   1113-1","dh":"495.5","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"}]},{"no":"47","maker":"심팩","ton":"300","items":[{"id":"M47-01","name":"Race way   1106","dh":"496.4","mat":"S55CM","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M47-02","name":"Race way   1113","dh":"495.5","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M47-03","name":"Race way   1179","dh":"487.9","mat":"C67SCM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M47-04","name":"Race way   1165","dh":"488.8","mat":"S55CM","t":"1.01","w":"126","p":"124","spm":"35~40"},{"id":"M47-05","name":"Race way   1159","dh":"487.6","mat":"S55CM","t":"1.01","w":"144","p":"134","spm":"35~40"},{"id":"M47-06","name":"Race way   1113-2","dh":"495.2","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M47-07","name":"Race way   1113D","dh":"491.9","mat":"C67S","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M47-08","name":"Race way   1156","dh":"486.9","mat":"C67S","t":"1.25","w":"143","p":"136","spm":"35~40"}]},{"no":"48","maker":"심팩","ton":"300","items":[{"id":"M48-01","name":"Race way   1113","dh":"489.3","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M48-02","name":"Race way   1165","dh":"491.5","mat":"S55CM","t":"1.01","w":"134","p":"124","spm":"35~40"},{"id":"M48-03","name":"Race way   1159B","dh":"490.8","mat":"S55CM","t":"1.01","w":"144","p":"134","spm":"35~40"},{"id":"M48-04","name":"Race way   1106","dh":"498.7","mat":"S55CM","t":"101","w":"126","p":"116","spm":"35~40"},{"id":"M48-05","name":"Race way   1113-2","dh":"497.6","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M48-06","name":"Race way   1156","dh":"490.1","mat":"C67CM","t":"1.25","w":"146","p":"136","spm":"35~40"},{"id":"M48-07","name":"Race way   1179-2","dh":"491.4","mat":"C67CM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M48-08","name":"Race way   1106-2","dh":"494.5","mat":"S55CM","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M48-09","name":"Race way   1113D","dh":"494.4","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"}]},{"no":"49","maker":"심팩","ton":"300","items":[{"id":"M49-01","name":"Race way   1179-3","dh":"490.5","mat":"C67S","t":"1.25","w":"248","p":"67~68","spm":"34"}]}]};
+const FIELDS={dh:"다이하이트",mat:"재질",t:"두께T",w:"폭W",p:"피치P",spm:"최대SPM"};
+const NOTE="3G Pack Seal류 내철 1번철 / 외철 2번철";
+const TOL=0.3;
+const VIEWS={std:"설비별 표준서",search:"품번별 조회",req:"수정요청 승인",
+             check:"세팅 점검기록",hist:"개정이력",qr:"QR 라벨 발행"};
+const GRP={std:"a",search:"a",req:"b",check:"b",hist:"b",qr:"c"};
+
+/* ═══════════ 상태 ═══════════ */
+let S=null,view="std",cur=null,isAdmin=false,me="",qrMode=false,selId="";
+let fq={pn:"",mat:"",chk:""}, sq="";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const nowISO=()=>new Date().toISOString();
+const pad=n=>String(n).padStart(2,"0");
+const fmtTs=t=>{const d=new Date(t); if(isNaN(d))return"";
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;};
+const today=()=>{const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const revNo=n=>"Rev."+pad(n);
+const mOf=no=>S.machines.find(m=>m.no===String(no));
+const itOf=(m,id)=>m?m.items.find(i=>i.id===id):null;
+const docNo=m=>"TJ-QP-"+pad(m?m.no:0);
+const pendCnt=()=>S.reqs.filter(r=>r.status==="pending").length;
+function hl(t0,t){const s=esc(t0); if(!t)return s;
+  const i=s.toLowerCase().indexOf(t.toLowerCase()); if(i<0)return s;
+  return s.slice(0,i)+'<b style="color:#C8433A">'+s.slice(i,i+t.length)+"</b>"+s.slice(i+t.length);}
+function lastCheck(mno,id){
+  const c=S.checks.filter(c=>c.mno===String(mno)&&c.itemId===id).sort((a,b)=>b.ts.localeCompare(a.ts));
+  return c[0]||null;}
+
+/* ═══════════ 동기화 ═══════════ */
+function setSync(st,txt){
+  [$("#sync"),$("#sync2")].forEach(e=>{if(!e)return; e.className=st; e.textContent=txt;});
+}
+function normalize(d){
+  d=d&&typeof d==="object"?d:{};
+  d.rev=Number(d.rev)||1; d.revDate=d.revDate||today();
+  d.machines=Array.isArray(d.machines)&&d.machines.length?d.machines:SEED.machines;
+  d.machines.forEach(m=>{m.no=String(m.no); m.items=(m.items||[]).map(it=>({id:it.id||uid(),...it}));});
+  d.reqs=d.reqs||[]; d.logs=d.logs||[]; d.checks=d.checks||[];
+  d.ua=d.ua||"2000-01-01T00:00:00.000Z";   /* 없으면 과거 — 서버본이 이기게 */
+  return d;
+}
+const saveLocal=()=>lsSet("pss.data",JSON.stringify(S));
+async function sbGet(){
+  const r=await fetch(`${SB_URL}/rest/v1/kv_store?key=eq.${KV_KEY}&select=value,updated_at`,
+    {headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}});
+  if(!r.ok) throw new Error("GET "+r.status);
+  const j=await r.json(); return j[0]?j[0].value:null;
+}
+async function sbPut(d){
+  const r=await fetch(`${SB_URL}/rest/v1/kv_store?on_conflict=key`,{method:"POST",
+    headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",
+             Prefer:"resolution=merge-duplicates,return=minimal"},
+    body:JSON.stringify({key:KV_KEY,value:d,updated_at:nowISO()})});
+  if(!r.ok) throw new Error("PUT "+r.status);
+}
+async function pull(){
+  try{
+    const v=await sbGet();
+    if(v){const srv=normalize(v); if(!S||new Date(srv.ua)>=new Date(S.ua)){S=srv; saveLocal();}}
+    else{ await push(); }
+    setSync("ok","서버 연결됨"); return true;
+  }catch(e){ setSync("err","서버 연결 실패"); return false; }
+}
+async function push(){
+  S.ua=nowISO(); saveLocal(); setSync("busy","저장 중…");
+  try{ await sbPut(S); setSync("ok","저장 완료"); return true; }
+  catch(e){ setSync("err","저장 실패 — 이 기기에만 저장됨"); return false; }
+}
+async function commit(mutate){
+  try{const v=await sbGet(); if(v){const srv=normalize(v); if(new Date(srv.ua)>new Date(S.ua)) S=srv;}}catch(e){}
+  mutate(); const ok=await push(); render(); return ok;
+}
+
+/* ═══════════ 렌더 ═══════════ */
+function render(){
+  cur=(cur&&mOf(cur.no))||S.machines[0];
+  const p=pendCnt();
+  const nb=$("#nb1"); nb.hidden=!p; nb.textContent=p;
+  $$("#pcTop .navitem").forEach(n=>n.classList.toggle("on",n.dataset.g===GRP[view]));
+  $$("#pcTop .mega-col a[data-v]").forEach(a=>a.classList.toggle("on",a.dataset.v===view));
+  $$("nav a[data-v]").forEach(a=>a.classList.toggle("on",a.dataset.v===view));
+  const rb=$("#pcTop .navitem[data-g='b']>button");
+  if(rb) rb.innerHTML="점검 · 승인 ▾"+(p?`<span class="nb">${p}</span>`:"");
+  $("#cnt").textContent=`설비 ${S.machines.length}대 · ${revNo(S.rev)}`;
+  ({std:vStd,search:vSearch,req:vReq,check:vCheck,hist:vHist,qr:vQr})[view]();
+}
+function head(extra,acts){
+  return `<div class="top"><button id="hamb" aria-label="메뉴">☰</button>
+    <h2>${esc(VIEWS[view])}${extra?`<span class="sub">${extra}</span>`:""}</h2>
+    ${acts?`<div class="acts noprint">${acts}</div>`:""}</div>`;
+}
+/* 관리자 전용 동작 — 미인증이면 PIN을 묻고 이어서 실행 */
+function needAdmin(fn){
+  if(isAdmin) return fn();
+  const p=prompt("관리자 PIN을 입력하세요"); if(p===null) return;
+  if(p!==ADMIN_PIN) return alert("PIN이 올바르지 않습니다.");
+  isAdmin=true; paintAdmin(); render(); fn();
+}
+function bar(label){
+  return `<div class="panel noprint"><div class="fl">
+    <span class="muted" style="font-size:12.5px">${label}</span>
+    <span class="grow"></span><button id="bPrint">🖨 인쇄</button><button id="bCsv">▦ 엑셀</button></div></div>`;
+}
+function bindBar(){
+  const p=$("#bPrint"), c=$("#bCsv");
+  if(p) p.onclick=()=>window.print();
+  if(c) c.onclick=exportCsv;
+}
+
+/* --- 설비별 표준서 --- */
+function vStd(){
+  const m=cur;
+  const rows=m.items.filter(it=>
+    (!fq.pn||(it.name+" "+it.mat).toLowerCase().includes(fq.pn.toLowerCase())) &&
+    (!fq.mat||it.mat===fq.mat) &&
+    (!fq.chk||(fq.chk==="none"?!lastCheck(m.no,it.id)
+      :fq.chk==="ok"?(lastCheck(m.no,it.id)||{}).ok===true:(lastCheck(m.no,it.id)||{}).ok===false)));
+  const mats=[...new Set(m.items.map(i=>i.mat).filter(Boolean))].sort();
+  const pend=S.reqs.filter(r=>r.status==="pending"&&r.mno===m.no).length;
+  const ck=S.checks.filter(c=>c.mno===m.no), ng=ck.filter(c=>!c.ok).length;
+
+  const tr=rows.map((it,i)=>{
+    const c=lastCheck(m.no,it.id);
+    return `<tr data-row="${esc(it.id)}"${it.id===selId?' class="sel"':''}>
+      <td class="num muted">${i+1}</td>
+      <td><b>${hl(it.name,fq.pn)}</b></td>
+      <td class="dh">${esc(it.dh)}</td>
+      <td>${esc(it.mat)}</td>
+      <td class="num">${esc(it.t)}</td><td class="num">${esc(it.w)}</td>
+      <td class="num">${esc(it.p)}</td><td class="num">${esc(it.spm)}</td>
+      <td>${c?`<span class="tag ${c.ok?"g":"r"}" title="${esc(c.by)} ${fmtTs(c.ts)}">${c.ok?"OK":"NG"} ${esc(c.actual)}</span>`:'<span class="tag d">미점검</span>'}</td>
+      <td class="noprint"><button class="s p" data-act="check" data-m="${esc(m.no)}" data-i="${esc(it.id)}">세팅체크</button>
+        ${isAdmin
+          ? `<button class="s" data-act="edit" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정</button>
+             <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제</button>`
+          : `<button class="s" data-act="req" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정요청</button>`}
+      </td></tr>`;}).join("");
+
+  const cards=rows.map(it=>{
+    const c=lastCheck(m.no,it.id);
+    const spec=[it.mat,it.t?it.t+"T":"",it.w?"W"+it.w:"",it.p?"P"+it.p:"",it.spm?it.spm+" SPM":""].filter(Boolean).join(" · ");
+    return `<div class="citem">
+      <div class="cname">${esc(it.name)}</div><div class="cdh">${esc(it.dh)}<small> mm</small></div>
+      <div class="cspec">${esc(spec)}</div>
+      <div class="cact"><button class="p" data-act="check" data-m="${esc(m.no)}" data-i="${esc(it.id)}">세팅체크</button>
+        <button data-act="req" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정요청</button>
+        ${isAdmin?`<button class="s" data-act="edit" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정</button>
+          <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제</button>`:""}
+        ${c?`<span class="tag ${c.ok?"g":"r"}">${c.ok?"OK":"NG"} ${esc(c.actual)} · ${fmtTs(c.ts).slice(5,10)}</span>`:""}</div></div>`;}).join("");
+
+  $("#main").innerHTML = head(`${esc(m.maker)} ${esc(m.ton)}톤 ${esc(m.no)}호기 · ${esc(docNo(m))}`,
+    `<button class="g" id="bAdd">＋ 기종 추가${isAdmin?"":" 🔒"}</button>
+     <button id="bMach">⚙ 설비 관리${isAdmin?"":" 🔒"}</button>`) + `
+    ${qrMode?`<div class="fieldbar"><div class="no">${esc(m.no)}<span>호기</span></div>
+      <div class="tx">${esc(m.maker)} ${esc(m.ton)}톤 · QR 스캔으로 열림<br>세팅 전 표준값을 확인하고, 금형 교체 후 [세팅체크]를 기록하세요.</div>
+      <div class="rv">${revNo(S.rev)}</div></div>`:""}
+    <div class="grid g4 noprint" style="margin-bottom:14px">
+      <div class="kpi"><small>등록 기종</small><b>${m.items.length}</b><em>세팅조건 보유</em></div>
+      <div class="kpi ${pend?"warn":""}"><small>승인 대기</small><b>${pend}</b><em>이 설비 기준</em></div>
+      <div class="kpi good"><small>점검 합격</small><b>${ck.length-ng}</b><em>누적</em></div>
+      <div class="kpi ${ng?"bad":""}"><small>점검 불합격</small><b>${ng}</b><em>재조정 대상</em></div>
+    </div>
+    <div class="panel noprint fold${qrMode?"":" open"}" id="condBox"><h3 id="condTg">조회조건</h3>
+      <div class="fl">
+        <label>설비</label>
+        <select id="fMch">${S.machines.map(x=>`<option value="${esc(x.no)}"${x.no===m.no?" selected":""}>${esc(x.no)}호기 · ${esc(x.maker)} ${esc(x.ton)}톤</option>`).join("")}</select>
+        <label>기종명</label><input id="fPn" placeholder="품번" value="${esc(fq.pn)}">
+        <label>재질</label><select id="fMat"><option value="">전체</option>${mats.map(x=>`<option${x===fq.mat?" selected":""}>${esc(x)}</option>`).join("")}</select>
+        <label>점검상태</label><select id="fChk"><option value="">전체</option>
+          <option value="ok"${fq.chk==="ok"?" selected":""}>합격</option>
+          <option value="ng"${fq.chk==="ng"?" selected":""}>불합격</option>
+          <option value="none"${fq.chk==="none"?" selected":""}>미점검</option></select>
+        <button class="p" id="fGo">조회</button>
+        <button id="bPrint">🖨 인쇄</button><button id="bCsv">▦ 엑셀</button>
+      </div></div>
+    <div class="panel">
+      <h3>${esc(m.maker)} ${esc(m.ton)}톤 ${esc(m.no)}호기 — 세팅 표준서
+        <span class="tag" style="margin-left:6px">${revNo(S.rev)} · ${esc(S.revDate)}</span>
+        <span class="tag a">공차 ±${TOL}mm</span>
+        ${pend?`<span class="tag r">승인대기 ${pend}</span>`:""}</h3>
+      <div class="tw">
+        <table><thead><tr><th class="num">No</th><th>기종명(품번)</th><th class="num">다이하이트</th><th>재질</th>
+          <th class="num">두께T</th><th class="num">폭W</th><th class="num">피치P</th><th class="num">최대SPM</th>
+          <th>최근점검</th><th class="noprint">작업</th></tr></thead>
+        <tbody>${tr||`<tr><td colspan="10" class="empty">조회조건에 맞는 기종이 없습니다.</td></tr>`}</tbody></table>
+        <div class="cards">${cards||'<div class="empty">조회조건에 맞는 기종이 없습니다.</div>'}</div>
+      </div>
+      <div class="fl" style="margin-top:9px;font-size:12px;color:var(--muted)">
+        <span>조회 <b>${rows.length}</b>건 / 전체 ${m.items.length}건</span>
+        <span class="grow" style="text-align:right">비고 : ${esc(NOTE)} · 승인 품질관리팀</span></div>
+    </div>`;
+  const cb=$("#condBox"); if(cb) $("#condTg").onclick=()=>cb.classList.toggle("open");
+  const ba=$("#bAdd"); if(ba) ba.onclick=()=>needAdmin(()=>openItem(cur.no,null));
+  const bm=$("#bMach"); if(bm) bm.onclick=()=>needAdmin(openMachine);
+  $("#fMch").onchange=e=>{cur=mOf(e.target.value); lsSet("pss.machine",cur.no); selId=""; qrMode=false; render();};
+  const go=()=>{fq.pn=$("#fPn").value.trim(); fq.mat=$("#fMat").value; fq.chk=$("#fChk").value; render();};
+  $("#fGo").onclick=go; $("#fPn").onkeydown=e=>{if(e.key==="Enter")go();};
+  $("#fMat").onchange=go; $("#fChk").onchange=go;
+  bindBar();
+}
+
+/* --- 품번별 조회 --- */
+function vSearch(){
+  const t=sq.trim(),k=t.toLowerCase(),hits=[];
+  if(t) S.machines.forEach(m=>m.items.forEach(it=>{if((it.name+" "+it.mat).toLowerCase().includes(k)) hits.push({m,it});}));
+  const tr=hits.map(({m,it})=>`<tr>
+      <td><b>${esc(m.no)}호기</b></td><td class="muted">${esc(m.maker)} ${esc(m.ton)}톤</td>
+      <td><b>${hl(it.name,t)}</b></td><td class="dh">${esc(it.dh)}</td><td>${hl(it.mat,t)}</td>
+      <td class="num">${esc(it.t)}</td><td class="num">${esc(it.w)}</td><td class="num">${esc(it.p)}</td>
+      <td class="num">${esc(it.spm)}</td>
+      <td class="noprint"><button class="s" data-act="go" data-m="${esc(m.no)}">표준서</button></td></tr>`).join("");
+  const cards=hits.map(({m,it})=>`<div class="citem">
+      <div class="cname">${esc(it.name)}</div><div class="cdh">${esc(it.dh)}<small> mm</small></div>
+      <div class="cspec">${esc(m.no)}호기 ${esc(m.maker)} ${esc(m.ton)}톤 · ${esc(it.mat)} · ${esc(it.t)}T · W${esc(it.w)} · ${esc(it.spm)} SPM</div>
+      <div class="cact"><button class="p" data-act="go" data-m="${esc(m.no)}">표준서 열기</button></div></div>`).join("");
+  $("#main").innerHTML = head(t?`검색어 "${esc(t)}"`:"") + `
+    <div class="panel noprint"><h3>조회조건</h3>
+      <div class="fl"><label>기종명 / 재질</label>
+        <input id="sPn" class="grow" placeholder="예) 1969 · 45624 · 304 · SPFH" value="${esc(sq)}">
+        <button class="p" id="sGo">조회</button><button id="bPrint">🖨 인쇄</button><button id="bCsv">▦ 엑셀</button></div></div>
+    <div class="panel">
+      <h3>조회 결과 <span class="tag">${hits.length}건</span>
+        ${hits.length?`<span class="tag a">설비 ${new Set(hits.map(h=>h.m.no)).size}대</span>`:""}</h3>
+      <div class="tw"><table><thead><tr><th>호기</th><th>설비</th><th>기종명(품번)</th><th class="num">다이하이트</th>
+        <th>재질</th><th class="num">두께T</th><th class="num">폭W</th><th class="num">피치P</th>
+        <th class="num">최대SPM</th><th class="noprint">이동</th></tr></thead>
+        <tbody>${tr||`<tr><td colspan="10" class="empty">${t?`"${esc(t)}" 조회 결과가 없습니다.`:"품번 일부를 입력하고 조회하세요."}</td></tr>`}</tbody></table>
+        <div class="cards">${cards||`<div class="empty">${t?"조회 결과가 없습니다.":"품번 일부를 입력하고 조회하세요."}</div>`}</div></div>
+    </div>`;
+  const go=()=>{sq=$("#sPn").value; render();};
+  $("#sGo").onclick=go; $("#sPn").onkeydown=e=>{if(e.key==="Enter")go();};
+  bindBar();
+}
+
+/* --- 수정요청 승인 --- */
+function vReq(){
+  const list=S.reqs.slice().sort((a,b)=>b.ts.localeCompare(a.ts));
+  const tr=list.map(r=>{
+    const act=(r.status==="pending"&&isAdmin)
+      ? `<button class="s g" data-act="approve" data-r="${esc(r.id)}">승인</button>
+         <button class="s d" data-act="reject" data-r="${esc(r.id)}">반려</button>`
+      : (r.status==="pending"?'<span class="muted">승인 대기</span>':`<span class="muted">${esc(r.appBy||"")}</span>`);
+    return `<tr><td class="muted">${fmtTs(r.ts)}</td><td><b>${esc(r.mno)}호기</b></td><td>${esc(r.itemName)}</td>
+      <td>${esc(FIELDS[r.field]||r.field)}</td>
+      <td class="num muted">${esc(r.old)}</td><td class="dh">${esc(r.new)}</td>
+      <td style="white-space:normal;max-width:280px">${esc(r.reason||"")}</td><td>${esc(r.by)}</td>
+      <td><span class="tag ${r.status==="pending"?"a":r.status==="approved"?"g":"r"}">${r.status==="pending"?"대기":r.status==="approved"?"승인":"반려"}</span></td>
+      <td class="noprint">${act}</td></tr>`;}).join("");
+  $("#main").innerHTML = head(isAdmin?"관리자 인증됨":"승인하려면 관리자 인증") + `
+    <div class="grid g4 noprint" style="margin-bottom:14px">
+      <div class="kpi"><small>전체 요청</small><b>${list.length}</b></div>
+      <div class="kpi ${pendCnt()?"warn":""}"><small>승인 대기</small><b>${pendCnt()}</b><em>품질 검토 필요</em></div>
+      <div class="kpi good"><small>승인</small><b>${list.filter(r=>r.status==="approved").length}</b></div>
+      <div class="kpi"><small>반려</small><b>${list.filter(r=>r.status==="rejected").length}</b></div>
+    </div>
+    ${bar("승인 시 표준서에 즉시 반영되고 개정번호가 올라갑니다.")}
+    <div class="panel"><h3>수정요청 목록 <span class="tag">${revNo(S.rev)}</span></h3>
+      <div class="tw"><table><thead><tr><th>요청일시</th><th>설비</th><th>기종명</th><th>항목</th>
+        <th class="num">현재값</th><th class="num">변경값</th><th>변경사유</th><th>요청자</th><th>상태</th>
+        <th class="noprint">처리</th></tr></thead>
+        <tbody>${tr||`<tr><td colspan="10" class="empty">등록된 수정요청이 없습니다.</td></tr>`}</tbody></table></div>
+      <div class="muted" style="font-size:12px;margin-top:9px">IATF 16949 7.5.3 문서화된 정보의 관리 — 변경 요청·승인 기록 보존</div>
+    </div>`;
+  bindBar();
+}
+
+/* --- 세팅 점검기록 --- */
+function vCheck(){
+  const list=S.checks.slice().sort((a,b)=>b.ts.localeCompare(a.ts));
+  const ng=list.filter(c=>!c.ok).length;
+  const tr=list.slice(0,400).map(c=>`<tr><td class="muted">${fmtTs(c.ts)}</td><td><b>${esc(c.mno)}호기</b></td>
+      <td>${esc(c.itemName)}</td><td class="num">${esc(c.std)}</td><td class="num"><b>${esc(c.actual)}</b></td>
+      <td class="num" style="color:${c.ok?"var(--muted)":"var(--red)"}">${c.dev>0?"+":""}${esc(c.dev)}</td>
+      <td><span class="tag ${c.ok?"g":"r"}">${c.ok?"합격":"불합격"}</span></td>
+      <td>${esc(c.by)}</td><td style="white-space:normal;max-width:240px">${esc(c.note||"")}</td></tr>`).join("");
+  $("#main").innerHTML = head(`판정기준 표준값 ±${TOL}mm`) + `
+    <div class="readout">
+      <div><small>전체 점검</small><b>${list.length}</b></div>
+      <div><small>합격</small><b class="g">${list.length-ng}</b></div>
+      <div><small>불합격</small><b class="${ng?"r":""}">${ng}</b></div>
+      <div><small>합격률</small><b>${list.length?Math.round((list.length-ng)/list.length*100):0}<span style="font-size:15px">%</span></b></div>
+    </div>
+    ${bar("금형 교체 후 실측 다이하이트 기록 — 초물검사 · 4M 변경 근거자료")}
+    <div class="panel"><h3>세팅 점검기록</h3>
+      <div class="tw"><table><thead><tr><th>점검일시</th><th>설비</th><th>기종명</th><th class="num">표준값</th>
+        <th class="num">실측값</th><th class="num">편차</th><th>판정</th><th>점검자</th><th>비고</th></tr></thead>
+        <tbody>${tr||`<tr><td colspan="9" class="empty">세팅 점검기록이 없습니다.</td></tr>`}</tbody></table></div></div>`;
+  bindBar();
+}
+
+/* --- 개정이력 --- */
+function vHist(){
+  const list=S.logs.slice().sort((a,b)=>b.ts.localeCompare(a.ts));
+  const ACTT={add:["신규","g"],del:["삭제","r"],edit:["수정",""],mach:["설비",""],req:["요청승인","a"]};
+  const tr=list.map(l=>{const a=ACTT[l.act||"req"]||ACTT.req;
+    return `<tr><td><span class="tag">${esc(revNo(l.rev))}</span></td><td class="muted">${fmtTs(l.ts)}</td>
+      <td><span class="tag ${a[1]}">${a[0]}</span></td>
+      <td><b>${esc(l.mno)}호기</b></td><td>${esc(l.itemName)}</td><td>${esc(FIELDS[l.field]||l.field)}</td>
+      <td class="num muted" style="white-space:normal;max-width:190px">${esc(l.old)}</td>
+      <td class="dh" style="white-space:normal;max-width:190px">${esc(l.new)}</td>
+      <td style="white-space:normal;min-width:180px">${esc(l.reason||"")}</td>
+      <td>${esc(l.by)}</td><td>${esc(l.appBy)}</td></tr>`;}).join("");
+  $("#main").innerHTML = head(`현재 ${revNo(S.rev)} · 개정일 ${esc(S.revDate)}`) + `
+    ${bar("승인되어 반영된 변경 내역 — 문서 개정 근거")}
+    <div class="panel"><h3>개정이력 <span class="tag">${list.length}건</span>
+      <span class="tag a">현재 ${revNo(S.rev)}</span></h3>
+      <div class="tw"><table><thead><tr><th>개정</th><th>반영일시</th><th>구분</th><th>설비</th><th>기종명</th><th>항목</th>
+        <th class="num">변경전</th><th class="num">변경후</th><th>변경사유</th><th>요청자</th><th>처리자</th></tr></thead>
+        <tbody>${tr||`<tr><td colspan="11" class="empty">개정 이력이 없습니다 — 최초 제정본(Rev.01) 상태입니다.</td></tr>`}</tbody></table></div>
+      <div class="muted" style="font-size:12px;margin-top:9px">최초 제정 Rev.01 · IATF 16949 7.5.3 변경 이력 보존</div>
+    </div>`;
+  bindBar();
+}
+
+/* --- QR 라벨 --- */
+function vQr(){
+  const base=lsGet("pss.qrbase")||(location.origin+location.pathname);
+  $("#main").innerHTML = head(`${S.machines.length}대`) + `
+    <div class="panel noprint"><h3>발행조건</h3>
+      <div class="fl"><label>QR 주소</label><input id="qb" class="grow" value="${esc(base)}">
+        <button id="qgo">적용</button><button class="p" id="bPrint">🖨 라벨 인쇄</button></div>
+      <div class="muted" style="font-size:12px;margin-top:8px">
+        인쇄 → 코팅 → 프레스 부착. 표준값이 바뀌어도 라벨은 교체하지 않습니다. 스캔하면 해당 호기 표준서가 열립니다.</div></div>
+    <div class="panel"><div class="qgrid" id="qgrid"></div></div>`;
+  const draw=()=>{
+    const b=$("#qb").value.trim(),g=$("#qgrid"); g.innerHTML="";
+    S.machines.forEach(m=>{
+      const url=b+(b.includes("?")?"&":"?")+"m="+encodeURIComponent(m.no);
+      const d=document.createElement("div"); d.className="qcard";
+      d.innerHTML=`<div class="qn">${esc(m.no)}호기</div><div class="qm">${esc(m.maker)} ${esc(m.ton)}톤</div>
+        <div class="qb"></div><div class="qt">세팅표준 · 스캔</div>`;
+      g.appendChild(d);
+      try{const q=qrcode(0,"M"); q.addData(url); q.make();
+        d.querySelector(".qb").innerHTML=q.createSvgTag({cellSize:4,margin:1,scalable:true});}
+      catch(e){d.querySelector(".qb").innerHTML=`<div style="font-size:9px;word-break:break-all;width:104px">${esc(url)}</div>`;}
+    });
+  };
+  $("#qgo").onclick=()=>{lsSet("pss.qrbase",$("#qb").value.trim()); draw();};
+  $("#bPrint").onclick=()=>window.print();
+  draw();
+}
+
+/* ═══════════ 모달 ═══════════ */
+const closeModal=()=>{$("#modalHost").innerHTML="";};
+function openModal(title,body,foot){
+  $("#modalHost").innerHTML=`<div class="mask" id="mask"><div class="modal" role="dialog" aria-modal="true">
+    <div class="mh"><b>${title}</b><button class="x" id="mx" aria-label="닫기">✕</button></div>
+    <div class="mb">${body}</div><div class="mf">${foot}</div></div></div>`;
+  $("#mx").onclick=closeModal;
+  $("#mask").onclick=e=>{if(e.target.id==="mask")closeModal();};
+}
+function openCheck(mno,itemId){
+  const m=mOf(mno),it=itOf(m,itemId); if(!it)return;
+  openModal(`세팅 점검 · ${esc(m.no)}호기`,
+    `<div class="info">기종 <b>${esc(it.name)}</b> · 표준 다이하이트 <b>${esc(it.dh)}</b> mm (허용 ±${TOL})</div>
+     <div class="fld"><label>실측 다이하이트 (mm)</label>
+       <input id="ckv" type="number" step="0.1" inputmode="decimal" placeholder="예: ${esc(it.dh)}"></div>
+     <div id="ckJ"></div>
+     <div class="fld"><label>비고</label><input id="ckn" placeholder="금형 교체 후 초물 확인 등"></div>`,
+    `<button onclick="closeModal()">취소</button><button class="p" id="ckS">기록 저장</button>`);
+  const std=parseFloat(it.dh);
+  const judge=()=>{const v=parseFloat($("#ckv").value),j=$("#ckJ");
+    if(isNaN(v)||isNaN(std)){j.innerHTML="";return null;}
+    const dev=Math.round((v-std)*100)/100,ok=Math.abs(dev)<=TOL+1e-9;
+    j.innerHTML=`<div class="judge ${ok?"o":"n"}">${ok?"✓ 합격":"✕ 불합격 — 재조정 필요"}
+      <small>편차 ${dev>0?"+":""}${dev.toFixed(2)}mm / 허용 ±${TOL}</small></div>`;
+    return {dev,ok};};
+  $("#ckv").addEventListener("input",judge);
+  $("#ckS").onclick=async()=>{
+    const v=parseFloat($("#ckv").value);
+    if(isNaN(v))return alert("실측값을 입력하세요.");
+    if(!me)return alert("상단에서 점검자를 선택하세요.");
+    const r=judge();
+    $("#ckS").disabled=true;
+    await commit(()=>{S.checks.unshift({id:uid(),ts:nowISO(),mno:String(mno),itemId,itemName:it.name,std:it.dh,
+      actual:String(v),dev:r.dev.toFixed(2),ok:r.ok,by:me,note:$("#ckn").value.trim()});
+      if(S.checks.length>1500) S.checks.length=1500;});
+    closeModal();
+    if(!r.ok) setTimeout(()=>{if(confirm("불합격으로 기록했습니다.\n표준값 자체를 바꿔야 한다면 수정요청을 올리시겠습니까?")) openReq(mno,itemId,"dh",String(v));},100);
+  };
+  setTimeout(()=>$("#ckv").focus(),50);
+}
+function openReq(mno,itemId,preField,preVal){
+  const m=mOf(mno),it=itOf(m,itemId); if(!it)return;
+  openModal(`수정요청 등록 · ${esc(m.no)}호기`,
+    `<div class="info">기종 <b>${esc(it.name)}</b> · 승인 시 표준서에 반영되고 개정번호가 올라갑니다.</div>
+     <div class="row2">
+       <div class="fld"><label>변경 항목</label><select id="rqf">
+         ${Object.entries(FIELDS).map(([k,v])=>`<option value="${k}"${k===(preField||"dh")?" selected":""}>${v}</option>`).join("")}</select></div>
+       <div class="fld"><label>현재 값</label><input id="rqo" readonly></div></div>
+     <div class="fld"><label>변경할 값</label><input id="rqn" value="${esc(preVal||"")}" placeholder="새 값"></div>
+     <div class="fld"><label>변경 사유 (필수)</label>
+       <textarea id="rqr" placeholder="예) 금형 재연마로 다이하이트 상승 — 초물 실측 3회 평균"></textarea></div>`,
+    `<button onclick="closeModal()">취소</button><button class="p" id="rqS">요청 등록</button>`);
+  const sync=()=>{$("#rqo").value=it[$("#rqf").value]??"";};
+  $("#rqf").addEventListener("change",sync); sync();
+  $("#rqS").onclick=async()=>{
+    const f=$("#rqf").value,nv=$("#rqn").value.trim(),rs=$("#rqr").value.trim();
+    if(!nv)return alert("변경할 값을 입력하세요.");
+    if(!rs)return alert("변경 사유는 필수입니다.");
+    if(!me)return alert("상단에서 요청자를 선택하세요.");
+    if(String(it[f]??"")===nv)return alert("현재 값과 동일합니다.");
+    $("#rqS").disabled=true;
+    await commit(()=>{S.reqs.unshift({id:uid(),ts:nowISO(),by:me,mno:String(mno),itemId,itemName:it.name,
+      field:f,old:String(it[f]??""),new:nv,reason:rs,status:"pending"});});
+    closeModal(); alert("수정요청을 등록했습니다.\n품질 승인 후 표준서에 반영됩니다.");
+  };
+}
+async function decide(reqId,ok){
+  if(!isAdmin)return alert("관리자 인증이 필요합니다.");
+  const r=S.reqs.find(x=>x.id===reqId); if(!r||r.status!=="pending")return;
+  const msg=ok?`승인하면 표준서에 반영되고 개정번호가 ${revNo(S.rev+1)} 로 올라갑니다.\n\n${r.mno}호기 ${r.itemName}\n${FIELDS[r.field]}: ${r.old} → ${r.new}\n\n진행할까요?`
+              :"이 요청을 반려합니다. 진행할까요?";
+  if(!confirm(msg))return;
+  await commit(()=>{
+    const rr=S.reqs.find(x=>x.id===reqId); if(!rr||rr.status!=="pending")return;
+    rr.status=ok?"approved":"rejected"; rr.appBy=me||"관리자"; rr.appTs=nowISO();
+    if(ok){
+      const mm=mOf(rr.mno),ii=itOf(mm,rr.itemId); if(!ii)return;
+      const old=String(ii[rr.field]??""); ii[rr.field]=rr.new;
+      S.rev=S.rev+1; S.revDate=today();
+      S.logs.unshift({id:uid(),ts:nowISO(),rev:S.rev,act:"req",mno:rr.mno,itemId:rr.itemId,itemName:rr.itemName,
+        field:rr.field,old,new:rr.new,reason:rr.reason,by:rr.by,appBy:rr.appBy,reqId:rr.id});
+    }});
+  alert(ok?`반영 완료 — ${revNo(S.rev)}`:"반려 처리했습니다.");
+}
+
+
+/* ═══ 관리자 : 기종 추가 / 수정 ═══ */
+const ITF=[["name","기종명(품번)","text"],["dh","다이하이트 (mm)","num"],["mat","재질","text"],
+           ["t","두께T (mm)","num"],["w","폭W (mm)","text"],["p","피치P (mm)","text"],["spm","최대SPM","text"]];
+function openItem(mno,itemId){
+  if(!isAdmin) return alert("관리자 인증이 필요합니다.");
+  const m=mOf(mno), it=itemId?itOf(m,itemId):null, isNew=!it;
+  openModal(`${isNew?"기종 추가":"기종 수정"} · ${esc(m.no)}호기`,
+    `<div class="info">${isNew?`<b>${esc(m.maker)} ${esc(m.ton)}톤 ${esc(m.no)}호기</b> 에 새 기종을 등록합니다.`
+       :`기종 <b>${esc(it.name)}</b> 의 세팅조건을 직접 수정합니다.`}
+     <br>저장하면 개정번호가 ${revNo(S.rev+1)} 로 올라가고 개정이력에 기록됩니다.</div>
+     <div class="fld"><label>기종명(품번) <span style="color:var(--red)">*</span></label>
+       <input id="itname" value="${esc(it?it.name:"")}" placeholder="예) 1853-515-1"></div>
+     <div class="row2">
+       <div class="fld"><label>다이하이트 (mm) <span style="color:var(--red)">*</span></label>
+         <input id="itdh" type="number" step="0.1" inputmode="decimal" value="${esc(it?it.dh:"")}"></div>
+       <div class="fld"><label>재질</label><input id="itmat" value="${esc(it?it.mat:"")}" placeholder="SPCC · 304-2B"></div>
+     </div>
+     <div class="row2">
+       <div class="fld"><label>두께T (mm)</label><input id="itt" value="${esc(it?it.t:"")}"></div>
+       <div class="fld"><label>폭W (mm)</label><input id="itw" value="${esc(it?it.w:"")}"></div>
+     </div>
+     <div class="row2">
+       <div class="fld"><label>피치P (mm)</label><input id="itp" value="${esc(it?it.p:"")}" placeholder="자동 가능"></div>
+       <div class="fld"><label>최대SPM</label><input id="itspm" value="${esc(it?it.spm:"")}" placeholder="30~35"></div>
+     </div>
+     <div class="fld"><label>${isNew?"등록":"변경"} 사유 <span style="color:var(--red)">*</span></label>
+       <textarea id="itr" placeholder="${isNew?"예) 신규 금형 입고 — 초물 세팅조건 확정":"예) 금형 재연마로 다이하이트 상승 — 초물 실측 3회 평균"}"></textarea></div>`,
+    `<button onclick="closeModal()">취소</button><button class="p" id="itS">${isNew?"등록":"저장"}</button>`);
+  $("#itS").onclick=async()=>{
+    const v={}; ITF.forEach(([k])=>{ v[k]=($("#it"+k).value||"").trim(); });
+    const rs=$("#itr").value.trim();
+    if(!v.name) return alert("기종명을 입력하세요.");
+    if(!v.dh) return alert("다이하이트를 입력하세요.");
+    if(isNaN(parseFloat(v.dh))) return alert("다이하이트는 숫자로 입력하세요.");
+    if(!rs) return alert(isNew?"등록 사유는 필수입니다.":"변경 사유는 필수입니다.");
+    if(!me) return alert("상단에서 사용자를 선택하세요.");
+    const dup=m.items.find(x=>x.name===v.name && x.id!==itemId);
+    if(dup && !confirm(`같은 기종명이 이미 있습니다.\n그래도 ${isNew?"등록":"저장"}할까요?`)) return;
+    $("#itS").disabled=true;
+    await commit(()=>{
+      const mm=mOf(mno); if(!mm) return;
+      S.rev=S.rev+1; S.revDate=today();
+      const stamp={ts:nowISO(),rev:S.rev,mno:String(mno),reason:rs,by:me,appBy:me};
+      if(isNew){
+        const nid="M"+mno+"-"+uid();
+        mm.items.push({id:nid,...v});
+        S.logs.unshift({id:uid(),...stamp,act:"add",itemId:nid,itemName:v.name,field:"기종 등록",
+          old:"",new:`DH ${v.dh} · ${v.mat||"-"} · ${v.t||"-"}T · W${v.w||"-"} · P${v.p||"-"} · ${v.spm||"-"} SPM`});
+      }else{
+        const ii=itOf(mm,itemId); if(!ii) return;
+        let n=0;
+        ITF.forEach(([k,lbl])=>{
+          const ov=String(ii[k]??""); if(ov===v[k]) return;
+          ii[k]=v[k]; n++;
+          S.logs.unshift({id:uid(),...stamp,act:"edit",itemId,itemName:v.name,
+            field:(k==="name"?"기종명":FIELDS[k]||k),old:ov,new:v[k]});
+        });
+        if(!n){ S.rev=S.rev-1; }   /* 바뀐 값 없으면 개정번호 되돌림 */
+      }
+    });
+    closeModal();
+  };
+  setTimeout(()=>$("#itname").focus(),60);
+}
+
+/* ═══ 관리자 : 기종 삭제 ═══ */
+function delItem(mno,itemId){
+  if(!isAdmin) return alert("관리자 인증이 필요합니다.");
+  const m=mOf(mno), it=itOf(m,itemId); if(!it) return;
+  const ck=S.checks.filter(c=>c.mno===String(mno)&&c.itemId===itemId).length;
+  openModal(`기종 삭제 · ${esc(m.no)}호기`,
+    `<div class="judge n">✕ 표준서에서 삭제합니다<small>개정번호 ${revNo(S.rev+1)}</small></div>
+     <div class="info">기종 <b>${esc(it.name)}</b> · 다이하이트 <b>${esc(it.dh)}</b> mm
+       <br>${ck?`이 기종의 점검기록 <b>${ck}</b>건은 삭제되지 않고 그대로 보존됩니다.`:"점검기록이 없는 기종입니다."}</div>
+     <div class="fld"><label>삭제 사유 <span style="color:var(--red)">*</span></label>
+       <textarea id="dlr" placeholder="예) 금형 폐기 — 단종 기종"></textarea></div>`,
+    `<button onclick="closeModal()">취소</button><button class="p" id="dlS" style="background:var(--red);border-color:var(--red)">삭제</button>`);
+  $("#dlS").onclick=async()=>{
+    const rs=$("#dlr").value.trim();
+    if(!rs) return alert("삭제 사유는 필수입니다.");
+    if(!me) return alert("상단에서 사용자를 선택하세요.");
+    if(!confirm(`${it.name} 을 표준서에서 삭제합니다.\n진행할까요?`)) return;
+    $("#dlS").disabled=true;
+    await commit(()=>{
+      const mm=mOf(mno); if(!mm) return;
+      const i=mm.items.findIndex(x=>x.id===itemId); if(i<0) return;
+      const old=mm.items[i];
+      mm.items.splice(i,1);
+      S.reqs.forEach(r=>{ if(r.itemId===itemId&&r.status==="pending"){r.status="rejected"; r.appBy=me; r.appTs=nowISO();} });
+      S.rev=S.rev+1; S.revDate=today();
+      S.logs.unshift({id:uid(),ts:nowISO(),rev:S.rev,act:"del",mno:String(mno),itemId,itemName:old.name,
+        field:"기종 삭제",old:`DH ${old.dh} · ${old.mat||"-"} · ${old.t||"-"}T · W${old.w||"-"} · ${old.spm||"-"} SPM`,
+        new:"",reason:rs,by:me,appBy:me});
+      if(selId===itemId) selId="";
+    });
+    closeModal();
+  };
+}
+
+/* ═══ 관리자 : 설비 관리 ═══ */
+function openMachine(){
+  if(!isAdmin) return alert("관리자 인증이 필요합니다.");
+  const rows=S.machines.map(m=>`<tr><td><b>${esc(m.no)}호기</b></td><td>${esc(m.maker)}</td>
+      <td class="num">${esc(m.ton)}톤</td><td class="num">${m.items.length}종</td>
+      <td><button class="s d" data-mdel="${esc(m.no)}"${m.items.length?' title="등록 기종을 먼저 삭제하세요"':""}>삭제</button></td></tr>`).join("");
+  openModal("설비 관리",
+    `<div class="info">프레스를 추가하거나 삭제합니다. 추가 후 [기종 추가]로 세팅조건을 등록하세요.
+      <br>기종이 등록된 설비는 삭제되지 않습니다.</div>
+     <div class="fl" style="margin-bottom:12px">
+       <input id="mno" placeholder="호기 (예: 50)" style="min-width:96px">
+       <input id="mmk" placeholder="제조사 (예: 심팩)" style="min-width:110px">
+       <input id="mtn" placeholder="톤수 (예: 300)" style="min-width:96px">
+       <button class="g" id="mAdd">＋ 설비 추가</button></div>
+     <div class="tw" style="max-height:44vh"><table><thead><tr><th>호기</th><th>제조사</th>
+       <th class="num">톤수</th><th class="num">등록기종</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`,
+    `<button onclick="closeModal()">닫기</button>`);
+  $("#mAdd").onclick=async()=>{
+    const no=$("#mno").value.trim(), mk=$("#mmk").value.trim(), tn=$("#mtn").value.trim();
+    if(!no||!mk||!tn) return alert("호기 · 제조사 · 톤수를 모두 입력하세요.");
+    if(!/^\d+$/.test(no)) return alert("호기는 숫자로 입력하세요.");
+    if(mOf(no)) return alert(no+"호기는 이미 등록되어 있습니다.");
+    if(!me) return alert("상단에서 사용자를 선택하세요.");
+    $("#mAdd").disabled=true;
+    await commit(()=>{
+      S.machines.push({no:String(no),maker:mk,ton:tn,items:[]});
+      S.machines.sort((a,b)=>(+a.no||999)-(+b.no||999));
+      S.rev=S.rev+1; S.revDate=today();
+      S.logs.unshift({id:uid(),ts:nowISO(),rev:S.rev,act:"mach",mno:String(no),itemId:"",itemName:"—",
+        field:"설비 등록",old:"",new:`${mk} ${tn}톤 ${no}호기`,reason:"설비 신규 등록",by:me,appBy:me});
+    });
+    closeModal(); openMachine();
+  };
+  $$("[data-mdel]").forEach(b=> b.onclick=async()=>{
+    const no=b.dataset.mdel, m=mOf(no);
+    if(m.items.length) return alert(`${no}호기에 기종 ${m.items.length}종이 등록되어 있습니다.\n기종을 먼저 삭제하세요.`);
+    if(!confirm(`${no}호기를 설비 목록에서 삭제합니다.\n진행할까요?`)) return;
+    await commit(()=>{
+      const i=S.machines.findIndex(x=>x.no===no); if(i<0) return;
+      const old=S.machines[i]; S.machines.splice(i,1);
+      S.rev=S.rev+1; S.revDate=today();
+      S.logs.unshift({id:uid(),ts:nowISO(),rev:S.rev,act:"mach",mno:no,itemId:"",itemName:"—",
+        field:"설비 삭제",old:`${old.maker} ${old.ton}톤 ${no}호기`,new:"",reason:"설비 삭제",by:me,appBy:me});
+      if(cur&&cur.no===no) cur=S.machines[0];
+    });
+    closeModal(); openMachine();
+  });
+}
+
+/* ═══════════ CSV ═══════════ */
+function csvDown(name,header,rows){
+  const q=v=>{const s=String(v??""); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
+  const body=[header,...rows].map(r=>r.map(q).join(",")).join("\r\n");
+  const blob=new Blob(["﻿"+body],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${name}_${today()}.csv`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},400);
+}
+function exportCsv(){
+  if(view==="std"){const m=cur;
+    csvDown(`세팅표준_${m.no}호기`,["No","기종명","다이하이트","재질","두께T","폭W","피치P","최대SPM","최근점검"],
+      m.items.map((it,i)=>{const c=lastCheck(m.no,it.id);
+        return [i+1,it.name,it.dh,it.mat,it.t,it.w,it.p,it.spm,c?`${c.ok?"OK":"NG"} ${c.actual} (${fmtTs(c.ts)})`:""];}));
+  }else if(view==="search"){
+    const k=sq.trim().toLowerCase(),rows=[];
+    S.machines.forEach(m=>m.items.forEach(it=>{if(k&&(it.name+" "+it.mat).toLowerCase().includes(k))
+      rows.push([m.no,`${m.maker} ${m.ton}톤`,it.name,it.dh,it.mat,it.t,it.w,it.p,it.spm]);}));
+    csvDown("품번별조회",["호기","설비","기종명","다이하이트","재질","두께T","폭W","피치P","최대SPM"],rows);
+  }else if(view==="req"){
+    csvDown("수정요청",["요청일시","호기","기종명","항목","현재값","변경값","변경사유","요청자","상태","승인자","처리일시"],
+      S.reqs.map(r=>[fmtTs(r.ts),r.mno,r.itemName,FIELDS[r.field]||r.field,r.old,r.new,r.reason,r.by,
+        r.status==="pending"?"대기":r.status==="approved"?"승인":"반려",r.appBy||"",r.appTs?fmtTs(r.appTs):""]));
+  }else if(view==="check"){
+    csvDown("세팅점검기록",["점검일시","호기","기종명","표준값","실측값","편차","판정","점검자","비고"],
+      S.checks.map(c=>[fmtTs(c.ts),c.mno,c.itemName,c.std,c.actual,c.dev,c.ok?"합격":"불합격",c.by,c.note||""]));
+  }else if(view==="hist"){
+    const AT={add:"신규",del:"삭제",edit:"수정",mach:"설비",req:"요청승인"};
+    csvDown("개정이력",["개정","반영일시","구분","호기","기종명","항목","변경전","변경후","변경사유","요청자","처리자"],
+      S.logs.map(l=>[revNo(l.rev),fmtTs(l.ts),AT[l.act||"req"]||"요청승인",l.mno,l.itemName,
+        FIELDS[l.field]||l.field,l.old,l.new,l.reason,l.by,l.appBy]));
+  }
+}
+
+/* ═══════════ 이벤트 ═══════════ */
+function setView(v){ view=v; lsSet("pss.view",v); closeNav(); render(); scrollTo({top:0}); }
+const closeNav=()=>{$("#nav").classList.remove("open"); const m=$(".navmask"); if(m)m.remove();
+  $$("#pcTop .navitem").forEach(n=>n.classList.remove("open"));};
+
+document.addEventListener("click",e=>{
+  /* PC 메가메뉴 — 터치 기기에서도 열리도록 클릭 토글 */
+  const nvb=e.target.closest("#pcTop .navitem>button");
+  if(nvb){
+    const it=nvb.parentElement, was=it.classList.contains("open");
+    $$("#pcTop .navitem").forEach(n=>n.classList.remove("open"));
+    if(!was) it.classList.add("open");
+    return;
+  }
+  if(!e.target.closest("#pcTop")) $$("#pcTop .navitem").forEach(n=>n.classList.remove("open"));
+
+  if(e.target.closest("#hamb")){
+    const n=$("#nav");
+    if(n.classList.contains("open"))return closeNav();
+    n.classList.add("open");
+    const mk=document.createElement("div"); mk.className="navmask"; mk.onclick=closeNav;
+    document.body.appendChild(mk); return;
+  }
+  if(e.target.closest("#navX")){ closeNav(); return; }
+
+  const a=e.target.closest("a[data-v],a[data-fn]");
+  if(a && (a.closest("#pcTop")||a.closest("nav"))){
+    if(a.dataset.v) setView(a.dataset.v);
+    if(a.dataset.fn) doFn(a.dataset.fn);
+    return;
+  }
+  const rw=e.target.closest("[data-row]");
+  if(rw && !e.target.closest("[data-act]")){
+    selId=rw.dataset.row;
+    $$("[data-row]").forEach(x=>x.classList.toggle("sel",x.dataset.row===selId)); return;
+  }
+  const b=e.target.closest("[data-act]"); if(!b)return;
+  const act=b.dataset.act;
+  if(act==="check") openCheck(b.dataset.m,b.dataset.i);
+  else if(act==="req") openReq(b.dataset.m,b.dataset.i);
+  else if(act==="edit") openItem(b.dataset.m,b.dataset.i);
+  else if(act==="del") delItem(b.dataset.m,b.dataset.i);
+  else if(act==="approve") decide(b.dataset.r,true);
+  else if(act==="reject") decide(b.dataset.r,false);
+  else if(act==="go"){cur=mOf(b.dataset.m); lsSet("pss.machine",cur.no); qrMode=false; setView("std");}
+});
+function doFn(f){ if(f==="print") setTimeout(()=>window.print(),120); else if(f==="csv") setTimeout(exportCsv,120); }
+
+function bindUser(sel){
+  sel.innerHTML=`<option value="">사용자</option>`+USERS.map(u=>`<option>${esc(u)}</option>`).join("");
+  if(me&&!USERS.includes(me)){const o=document.createElement("option"); o.value=me;o.textContent=me; sel.insertBefore(o,sel.lastChild);}
+  sel.value=me;
+  sel.onchange=e=>{
+    me=e.target.value;
+    if(me==="기타"){const n=prompt("이름을 입력하세요");
+      if(n&&n.trim()){me=n.trim(); const o=document.createElement("option"); o.value=me;o.textContent=me;
+        e.target.insertBefore(o,e.target.lastChild); e.target.value=me;} else {me=""; e.target.value="";}}
+    lsSet("pss.me",me);
+    [$("#me1"),$("#me2")].forEach(x=>{ if(!x||x===e.target) return;
+      if(me && ![...x.options].some(o=>o.value===me)){
+        const o2=document.createElement("option"); o2.value=me; o2.textContent=me; x.insertBefore(o2,x.lastChild); }
+      x.value=me; });
+  };
+}
+function paintAdmin(){
+  const t2=isAdmin?"관리자 ✓":"관리자", t1=isAdmin?"관리자 인증됨 ✓":"관리자 인증";
+  const a1=$("#admin1"), a2=$("#admin2");
+  if(a1){a1.textContent=t1; a1.classList.toggle("on",isAdmin);}
+  if(a2){a2.textContent=t2; a2.classList.toggle("on",isAdmin);}
+}
+function toggleAdmin(){
+  if(isAdmin){isAdmin=false; paintAdmin(); render(); return;}
+  const p=prompt("관리자 PIN을 입력하세요"); if(p===null)return;
+  if(p===ADMIN_PIN){isAdmin=true; paintAdmin(); render();}
+  else alert("PIN이 올바르지 않습니다.");
+}
+$("#admin1").onclick=toggleAdmin;
+$("#admin2").onclick=toggleAdmin;
+document.addEventListener("visibilitychange",()=>{if(!document.hidden) pull().then(render);});
+window.addEventListener("online",()=>pull().then(render));
+window.addEventListener("resize",()=>{if(innerWidth>900) closeNav();});
+
+/* ═══════════ 시작 ═══════════ */
+(function boot(){
+  let local=null; try{local=JSON.parse(lsGet("pss.data")||"null");}catch(e){}
+  S=normalize(local||{rev:1,revDate:today(),machines:SEED.machines,ua:"2000-01-01T00:00:00.000Z"});
+  me=lsGet("pss.me")||"";
+  bindUser($("#me1")); bindUser($("#me2"));
+  const qm=new URLSearchParams(location.search).get("m");
+  cur=(qm&&mOf(qm))||mOf(lsGet("pss.machine"))||S.machines[0];
+  if(qm&&mOf(qm)){qrMode=true; view="std";}
+  else{const v=lsGet("pss.view"); if(v&&VIEWS[v]) view=v;}
+  setSync("busy","서버 확인 중…");
+  render();
+  pull().then(render);
+  setInterval(()=>{if(!document.hidden) pull().then(render);},120000);
+})();
+</script>
+</body>
+</html>
