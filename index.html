@@ -2726,7 +2726,10 @@ const ACCOUNTS={
   "2003":{name:"유성환",role:"editor"},
   "2004":{name:"왕석주",role:"editor"},
   "2006":{name:"최민호",role:"editor"},
-  "2007":{name:"강영태",role:"editor"}
+  "2007":{name:"강영태",role:"editor"},
+  "2012":{name:"김태주",role:"editor"},
+  "2016":{name:"박종식",role:"editor"},
+  "2018":{name:"구진석",role:"editor"}
 };
 const ROLET={approver:"승인자",editor:"수정자"};
 /* 승인요청 종류 */
@@ -2855,7 +2858,7 @@ function needEdit(fn){
 }
 /* 로그인 필요 안내 → 바로 PIN 입력 */
 function needLogin(){
-  alert("기록·요청에는 PIN 로그인이 필요합니다.\n승인자 4001·4003·4005 / 수정가능자 2001·2003·2004·2006·2007");
+  alert("기록·요청에는 PIN 로그인이 필요합니다.\n승인자 4001·4003·4005\n수정자 2001·2003·2004·2006·2007·2012·2016·2018");
   doLogin();
 }
 /* PIN 로그인 — 성공하면 auth 설정 후 true */
