@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>설비별 세팅표준 v1.0 · 태진다이텍</title>
+<title>설비별 세팅표준 v1.1 · 태진다이텍</title>
 <script>/* QR encoder (qrcode-generator, MIT) — 내장: 외부망 없이도 생성 */
 //---------------------------------------------------------------------
 //
@@ -2433,7 +2433,12 @@ nav a i{width:22px;display:inline-flex;align-items:center;justify-content:center
 nav a .nb{margin-left:auto;background:#C8433A;color:#fff;border-radius:9px;font-size:10px;font-weight:700;padding:1px 6px}
 nav .nvuser{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.1);display:grid;gap:7px}
 nav .nvuser label{font-size:11.5px;opacity:.7}
-nav .nvuser select{background:#22375A;border:1px solid #33507D;color:#EAF1FA;border-radius:6px;padding:8px 9px;font-size:13.5px}
+nav .nvuser .who1{background:#22375A;border:1px solid #33507D;color:#EAF1FA;border-radius:6px;padding:8px 9px;font-size:13px}
+nav .nvuser .who1 b{font-size:14px}
+#pcTop .pt-st .who{color:#dce3ec;font-weight:700;font-size:12px}
+#pcTop .pt-st .who .rt{font-weight:600;font-size:10.5px;padding:1px 5px;border-radius:8px;margin-left:5px}
+#pcTop .pt-st .who .rt.g{background:#1E5540;color:#8FE3B8}
+#pcTop .pt-st .who .rt.a{background:#5C4718;color:#F2C879}
 nav .nvuser button{background:#22375A;border:1px solid #33507D;color:#EAF1FA;font-size:13px;padding:8px}
 nav .nvuser button:hover{background:#2B4470}
 nav .nvuser button.on{background:var(--amber);border-color:var(--amber);color:#202833}
@@ -2446,6 +2451,13 @@ main{flex:1;min-width:0;padding:16px 16px 56px}
 .top h2{flex:1;min-width:0}
 .top .sub{font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
 .top .acts{display:flex;gap:7px;flex:none;flex-wrap:wrap}
+.who-t{font-size:11.5px;color:#9aa6b7;white-space:nowrap}
+.who-t b{color:#fff;font-weight:700}
+.who-t.ap b{color:#F5B342}.who-t.ed b{color:#8FD3FF}
+.who-n{font-size:13px;color:#DCE6F5;padding:2px 0 4px}
+.who-n b{display:block;font-size:14px;color:#fff}
+.who-n span{font-size:11px;opacity:.75}
+.who-n.ap b{color:#F5B342}.who-n.ed b{color:#8FD3FF}
 @media(max-width:560px){.top .acts{width:100%}.top .acts button{flex:1}}
 #hamb{background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:15px;line-height:1;flex:none}
 
@@ -2607,9 +2619,9 @@ td.ecell input.ci:focus{outline:2px solid var(--steel);border-color:var(--steel)
 
   <div class="pt-st">
     <span id="sync2">확인 중</span>
-    <select id="me2" title="사용자"></select>
-    <button id="admin2">관리자</button>
-    <span class="ver">v1.0</span>
+    <span id="who2" class="who-t"></span>
+    <button id="admin2">로그인</button>
+    <span class="ver" title="빌드 2026-09-22">v1.1</span>
   </div>
 </div>
 
@@ -2623,11 +2635,11 @@ td.ecell input.ci:focus{outline:2px solid var(--steel);border-color:var(--steel)
   <a data-v="hist"><i>⟲</i>개정이력</a>
   <a data-v="qr"><i>▣</i>QR 라벨 발행</a>
   <div class="nvuser">
-    <label>작업자</label>
-    <select id="me1"></select>
-    <button id="admin1">관리자 인증</button>
+    <label>접속자</label>
+    <div id="who1" class="who-n">로그인 안 됨</div>
+    <button id="admin1">PIN 로그인</button>
   </div>
-  <div class="foot"><span id="sync">확인 중</span><br><span id="cnt"></span><br><span>v1.0</span></div>
+  <div class="foot"><span id="sync">확인 중</span><br><span id="cnt"></span><br><span>v1.1 · 2026-09-22</span></div>
 </nav>
 
 <main id="main"></main>
@@ -2638,8 +2650,22 @@ td.ecell input.ci:focus{outline:2px solid var(--steel);border-color:var(--steel)
 const SB_URL="https://ebthltdmxpzlkfwvdloz.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVidGhsdGRteHB6bGtmd3ZkbG96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNTcxNTQsImV4cCI6MjA5MDczMzE1NH0.bXqNpOtDMCFjuZROrIDm_3o0kHmNESs7EHOgGnFCxAM";
 const KV_KEY="tj_setting_std_v1";
-const ADMIN_PIN="2580";          /* 관리자(승인) PIN */
-const USERS=["김상기","허미정","문수진","오현민","강병주","강창구","기타"];
+/* ── 접속자 PIN ──
+   approver : 승인 · 반려 + 표준 직접수정(추가/수정/삭제/설비관리) 모두 가능
+   editor   : 표준 직접수정만 가능 (승인 · 반려 불가)
+   PIN을 바꾸려면 아래 값만 고치면 됩니다.                                   */
+const ACCOUNTS={
+  "4001":{name:"강병주",role:"approver"},
+  "4003":{name:"김상기",role:"approver"},
+  "4005":{name:"오현민",role:"approver"},
+  "2001":{name:"강창구",role:"editor"},
+  "2003":{name:"유성환",role:"editor"},
+  "2004":{name:"왕석주",role:"editor"},
+  "2006":{name:"최민호",role:"editor"},
+  "2007":{name:"강영태",role:"editor"}
+};
+const ROLET={approver:"승인자",editor:"수정자"};
+const USERS=["강병주","김상기","오현민","강창구","유성환","왕석주","최민호","강영태","허미정","문수진","기타"];
 const SEED={"machines":[{"no":"1","maker":"쌍용","ton":"200","items":[{"id":"M1-01","name":"T1XX","dh":"448.7","mat":"304","t":"0.5","w":"126","p":"120","spm":"20~25"},{"id":"M1-02","name":"48338-2H010","dh":"462.9","mat":"SPCC","t":"1","w":"94","p":"94","spm":"25"},{"id":"M1-03","name":"45631-26010","dh":"459.2","mat":"SPCC","t":"1.4","w":"190","p":"185","spm":"25"},{"id":"M1-04","name":"45524-26210","dh":"463.8","mat":"SPCC","t":"0.8","w":"102","p":"102","spm":"25"},{"id":"M1-05","name":"45624-2F010(LOWER)","dh":"464.4","mat":"SPCC","t":"1.6","w":"160","p":"129","spm":"25"},{"id":"M1-06","name":"45624-2F010(UPPER)","dh":"463.6","mat":"SPCC","t":"1","w":"160","p":"128","spm":"25"},{"id":"M1-07","name":"1781-0001-01","dh":"409.4","mat":"SPCC","t":"0.6","w":"110","p":"101","spm":"30~35"},{"id":"M1-08","name":"1979-0051-01","dh":"399.1","mat":"SPCC","t":"0.8","w":"120","p":"110","spm":"30~35"},{"id":"M1-09","name":"1888-0005","dh":"408.2","mat":"304 J1","t":"0.5","w":"126","p":"118","spm":"20~25"},{"id":"M1-10","name":"1976-0004-01","dh":"398.8","mat":"SPCC","t":"0.6","w":"102","p":"92","spm":"30~35"},{"id":"M1-11","name":"1969-0030-01","dh":"419.9","mat":"SPCC","t":"0.6","w":"102","p":"92","spm":"30~35"},{"id":"M1-12","name":"1946-00053-01","dh":"418.9","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"30~35"}]},{"no":"2","maker":"심팩","ton":"200","items":[{"id":"M2-01","name":"45524-26210","dh":"466.5","mat":"SPCC","t":"0.8","w":"102","p":"102","spm":"25"},{"id":"M2-02","name":"48338-2H010","dh":"465.7","mat":"SPCC","t":"1","w":"94","p":"94","spm":"25"},{"id":"M2-03","name":"45624-2F010 (LOWER)","dh":"467.3","mat":"SPCC","t":"1.6","w":"160","p":"129","spm":"25"},{"id":"M2-04","name":"45624-2F010     (UPPER)","dh":"466.5","mat":"SPCC","t":"1","w":"126","p":"128","spm":"25"},{"id":"M2-05","name":"45631-26010              (SEMI-PRO)","dh":"464.7","mat":"SPCC","t":"1.4","w":"190","p":"185","spm":"25"},{"id":"M2-06","name":"45631-26010","dh":"460.9","mat":"SPCC","t":"1.4","w":"190","p":"185","spm":"25"}]},{"no":"3","maker":"심팩","ton":"150","items":[{"id":"M3-01","name":"1968-0016-02","dh":"386","mat":"430-2B","t":"0.6","w":"90","p":"88","spm":"35~40"},{"id":"M3-02","name":"1945-349-02","dh":"35901","mat":"430-2B","t":"0.6","w":"62","p":"60","spm":"50~55"},{"id":"M3-03","name":"1515-196","dh":"376.4","mat":"SPCC","t":"0.9","w":"64","p":"55","spm":"45~50"}]},{"no":"4","maker":"심팩","ton":"150","items":[{"id":"M4-01","name":"1958-365-1","dh":"372.7","mat":"SPCC","t":"0.6","w":"74","p":"72","spm":"35~40"},{"id":"M4-02","name":"1967-392","dh":"375.4","mat":"SPCC","t":"0.6","w":"84","p":"80","spm":"35~40"},{"id":"M4-03","name":"1952-346-2","dh":"355.5","mat":"430-BA","t":"0.6","w":"66","p":"66","spm":"25~30"},{"id":"M4-04","name":"1853-586","dh":"385.2","mat":"304-BA","t":"0.5","w":"73","p":"72","spm":"35~40"},{"id":"M4-05","name":"1856-627-2","dh":"358.7","mat":"430-BA","t":"0.6","w":"72","p":"70","spm":"25~30"},{"id":"M4-06","name":"1968-364-1","dh":"357","mat":"SPCC","t":"0.6","w":"86","p":"84","spm":"35~40"},{"id":"M4-07","name":"1861-597","dh":"348.4","mat":"430-BA","t":"0.6","w":"80","p":"78","spm":"35~40"},{"id":"M4-08","name":"1945-349-2","dh":"359","mat":"430-BA","t":"0.6","w":"62","p":"60","spm":"25~30"},{"id":"M4-09","name":"1862-0041-21","dh":"387.4","mat":"430-BA","t":"0.6","w":"80","p":"78","spm":"25~30"},{"id":"M4-10","name":"1960-0031-21","dh":"387.5","mat":"430-BA","t":"0.6","w":"80","p":"77.9","spm":"25~30"},{"id":"M4-11","name":"1862-0042-21","dh":"387.2","mat":"SUS430","t":"0.6","w":"80","p":"78","spm":"20~25"}]},{"no":"5","maker":"심팩","ton":"110","items":[{"id":"M5-01","name":"1853-515-1","dh":"364.8","mat":"SPCC","t":"0.8","w":"80","p":"78","spm":"35~40"},{"id":"M5-02","name":"1965-326-1","dh":"298.3","mat":"SPCC","t":"0.8","w":"100","p":"90","spm":"35~40"},{"id":"M5-03","name":"1553-101-1","dh":"341.3","mat":"SPCC","t":"0.8","w":"80","p":"76","spm":"35~40"},{"id":"M5-04","name":"1807-653","dh":"299.6","mat":"SPCC","t":"0.6","w":"114","p":"28","spm":"20~25"},{"id":"M5-05","name":"1947-353","dh":"303.8","mat":"SPCC","t":"0.6","w":"74","p":"72","spm":"35~40"},{"id":"M5-06","name":"1755-296","dh":"273.2","mat":"SPCC","t":"0.5","w":"72","p":"69.5","spm":"30~35"},{"id":"M5-07","name":"1982-371","dh":"294.7","mat":"SPCC","t":"0.8","w":"108","p":"107.5","spm":"25"}]},{"no":"6","maker":"심팩","ton":"110","items":[{"id":"M6-01","name":"1853-515-1","dh":"365","mat":"SPCC","t":"0.8","w":"80","p":"78","spm":"20~25"},{"id":"M6-02","name":"1945-349-1","dh":"301.3","mat":"SPCC","t":"0.6","w":"68","p":"66","spm":"35~40"},{"id":"M6-03","name":"1982-371","dh":"293.9","mat":"SPCC","t":"0.8","w":"108","p":"107.5","spm":"25~30"},{"id":"M6-04","name":"1970-363","dh":"312.6","mat":"SPCC","t":"0.6","w":"94","p":"93.5","spm":"35~40"},{"id":"M6-05","name":"1970-372-1","dh":"312.3","mat":"SPCC","t":"0.8","w":"94","p":"93.5","spm":"35~40"},{"id":"M6-06","name":"1862-651-01","dh":"349.6","mat":"SPCC","t":"0.6","w":"90","p":"85.5","spm":"30~35"}]},{"no":"11","maker":"심팩","ton":"80","items":[{"id":"M11-01","name":"1547-102-1","dh":"315.7","mat":"SPCC","t":"0.6","w":"70","p":"68","spm":"25~30"}]},{"no":"28","maker":"국일","ton":"200","items":[{"id":"M28-01","name":"1515-196","dh":"379","mat":"SPCC","t":"0.9","w":"64","p":"55","spm":"35~40"}]},{"no":"29","maker":"국일","ton":"200","items":[{"id":"M29-01","name":"1515-196","dh":"378.5","mat":"SPCC","t":"0.9","w":"64","p":"55","spm":"35~40"},{"id":"M29-02","name":"45631-26010","dh":"460.5","mat":"","t":"","w":"","p":"","spm":""}]},{"no":"30","maker":"국일","ton":"160","items":[{"id":"M30-01","name":"1951-386","dh":"417.5","mat":"SPCC","t":"0.6","w":"76","p":"66","spm":"30~35"}]},{"no":"31","maker":"심팩","ton":"150","items":[{"id":"M31-01","name":"1858-619","dh":"335.2","mat":"430-BA","t":"0.6","w":"88","p":"74","spm":"35~40"},{"id":"M31-02","name":"1952-0052-21","dh":"392.1","mat":"430-2B","t":"0.6","w":"70","p":"68","spm":"25~30"},{"id":"M31-03","name":"1963-0055-02","dh":"387.2","mat":"430-2B","t":"0.6","w":"84","p":"82","spm":"25~30"},{"id":"M31-04","name":"1960-0031-21","dh":"387.9","mat":"430-2B","t":"0.6","w":"80","p":"78","spm":"25~30"},{"id":"M31-05","name":"1862-651","dh":"348.6","mat":"SPCC","t":"0.6","w":"90","p":"86","spm":"25~30"},{"id":"M31-06","name":"1952-0056-21","dh":"392.6","mat":"430","t":"0.6","w":"70","p":"68","spm":"20~30"},{"id":"M31-07","name":"※단발작업시 피더기 릴리징 5로 작업","dh":"","mat":"","t":"","w":"","p":"","spm":""}]},{"no":"32","maker":"심팩","ton":"200","items":[{"id":"M32-01","name":"1861-596","dh":"400.4","mat":"SPCC","t":"0.6","w":"94","p":"92","spm":"35~40"},{"id":"M32-02","name":"1951-386","dh":"418.6","mat":"SPCC","t":"0.6","w":"76","p":"66","spm":"35~40"},{"id":"M32-03","name":"1967-391","dh":"408.5","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"35~40"}]},{"no":"33","maker":"심팩","ton":"250","items":[{"id":"M33-01","name":"1973-325","dh":"383.8","mat":"SPCC","t":"0.6","w":"125","p":"107","spm":"30~35"},{"id":"M33-02","name":"1972-383","dh":"409.5","mat":"SPCC","t":"0.6","w":"114","p":"104","spm":"30~35"},{"id":"M33-03","name":"1967-391","dh":"407.8","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"30~35"},{"id":"M33-04","name":"1781-0001-00","dh":"408","mat":"SPCC","t":"0.6","w":"110","p":"102","spm":"30~35"},{"id":"M33-05","name":"1959-0024-01","dh":"428.5","mat":"SPCC","t":"0.6","w":"86","p":"84","spm":"25~30"},{"id":"M33-06","name":"1974-0023-01","dh":"399.3","mat":"SPCC","t":"0.6","w":"100","p":"98","spm":"25~30"},{"id":"M33-07","name":"1963-0055-01","dh":"397.6","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M33-08","name":"1962-0030","dh":"387.5","mat":"SPCC","t":"0.6","w":"94","p":"84","spm":"30~35"},{"id":"M33-09","name":"1946-0053-01","dh":"418","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"30~35"},{"id":"M33-10","name":"1960-0031-01","dh":"418","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M33-11","name":"1969-0030-01","dh":"418.7","mat":"SPCC","t":"0.6","w":"102","p":"93","spm":"30~35"},{"id":"M33-12","name":"1862-0041(0042)-01","dh":"417.3","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M33-13","name":"1968-0016-01","dh":"398","mat":"SPCC","t":"0.6","w":"92","p":"90","spm":"30~35"},{"id":"M33-14","name":"MAG624828","dh":"474.2","mat":"SPCC","t":"2.3","w":"46","p":"46","spm":"35~40"}]},{"no":"34","maker":"심팩","ton":"250","items":[{"id":"M34-01","name":"1967-391","dh":"406.2","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"35~40"},{"id":"M34-02","name":"1973-325","dh":"381.9","mat":"SPCC","t":"0.6","w":"125","p":"107","spm":"30~35"},{"id":"M34-03","name":"1968-0016-01","dh":"396.6","mat":"SPCC","t":"0.6","w":"92","p":"90","spm":"25~30"},{"id":"M34-04","name":"1962-0030","dh":"387.5","mat":"SPCC","t":"0.6","w":"94","p":"84","spm":"30~35"},{"id":"M34-05","name":"1871-0043-01","dh":"398.8","mat":"SPCC","t":"0.6","w":"100","p":"98","spm":"25~30"},{"id":"M34-06","name":"1873-0045-01","dh":"400.4","mat":"SPCC","t":"0.8","w":"120","p":"110","spm":"25~30"},{"id":"M34-07","name":"1888-0005","dh":"406.5","mat":"304","t":"0.5","w":"126","p":"117","spm":"20~25"},{"id":"M34-08","name":"1979-0051-01","dh":"397.8","mat":"SPCC","t":"0.8","w":"120","p":"110","spm":"30~35"},{"id":"M34-09","name":"1946-0053-01","dh":"417.6","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"30~35"},{"id":"M34-10","name":"1969-0030-01","dh":"418","mat":"SPCC","t":"0.6","w":"102","p":"92","spm":"30~35"},{"id":"M34-11","name":"1976-0004-01","dh":"397.8","mat":"SPCC","t":"0.6","w":"102","p":"90","spm":"30~35"},{"id":"M34-12","name":"1974-0023-01","dh":"399.1","mat":"SPCC","t":"0.6","w":"100","p":"98","spm":"30~35"},{"id":"M34-13","name":"1781-0001-01","dh":"407.6","mat":"SPCC","t":"0.6","w":"110","p":"102","spm":"35~40"},{"id":"M34-14","name":"1862-0041-01","dh":"417","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M34-15","name":"1960-0031-01","dh":"417.6","mat":"SPCC","t":"0.6","w":"90","p":"87.8","spm":"30~35"}]},{"no":"35","maker":"심팩","ton":"250","items":[{"id":"M35-01","name":"1960-0031-01","dh":"417.3","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M35-02","name":"1969-0030-01","dh":"419.2","mat":"SPCC","t":"0.6","w":"102","p":"93","spm":"30~35"},{"id":"M35-03","name":"1862-0041-01","dh":"417.6","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M35-04","name":"1979-0051-01","dh":"398","mat":"SPCC","t":"0.8","w":"120","p":"109","spm":"30~35"},{"id":"M35-05","name":"1962-0030","dh":"388.1","mat":"SPCC","t":"0.6","w":"94","p":"84","spm":"35~40"},{"id":"M35-06","name":"1946-0053-01","dh":"418.3","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"35~40"}]},{"no":"36","maker":"심팩","ton":"300","items":[{"id":"M36-01","name":"Race way   1106","dh":"497.7","mat":"S55CM","t":"1.01","w":"125","p":"116","spm":"35~40"},{"id":"M36-02","name":"Race way   1165","dh":"487.6","mat":"S55CM","t":"1.01","w":"134","p":"124","spm":"35~40"},{"id":"M36-03","name":"Race way   1113","dh":"488.6","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M36-04","name":"Race way   1179","dh":"488.1","mat":"C67SCM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M36-05","name":"Race way   1113-2","dh":"496.7","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M36-06","name":"AB-3248-SC-01\n(9BUX)","dh":"489.5","mat":"3042B","t":"0.5","w":"118","p":"108","spm":"22~24"},{"id":"M36-07","name":"Race way   1106-2","dh":"494","mat":"S55CM","t":"1.01","w":"125","p":"116","spm":"35~40"}]},{"no":"37","maker":"국일","ton":"200","items":[{"id":"M37-01","name":"1853-515-1","dh":"403","mat":"SPCC","t":"0.8","w":"80","p":"78","spm":"30~35"},{"id":"M37-02","name":"1853-515-2","dh":"368.5","mat":"304-2B","t":"0.5","w":"75","p":"75","spm":"30~35"},{"id":"M37-03","name":"1869-621","dh":"372.2","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M37-04","name":"1958-365-2(신형)","dh":"448.6","mat":"304-2B","t":"0.6","w":"80","p":"78","spm":"25~30"},{"id":"M37-05","name":"1968-364-1","dh":"359.3","mat":"SPCC","t":"0.6","w":"74","p":"72","spm":"30~35"},{"id":"M37-06","name":"1968-364-2(신형)","dh":"448.5","mat":"304-2B","t":"0.6","w":"93","p":"91","spm":"25~30"},{"id":"M37-07","name":"1974-0023-21","dh":"931.1","mat":"430-2B","t":"0.6","w":"94","p":"92","spm":"24~28"},{"id":"M37-08","name":"1862-651","dh":"373.2","mat":"SPCC","t":"0.6","w":"90","p":"86","spm":"30~35"},{"id":"M37-09","name":"1963-0055-01","dh":"398.5","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M37-10","name":"1967-391","dh":"407.7","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"30~35"},{"id":"M37-11","name":"1861-596","dh":"400.3","mat":"SPCC","t":"0.6","w":"94","p":"92","spm":"30~35"},{"id":"M37-12","name":"1551-189","dh":"408","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M37-13","name":"1969-0030-01","dh":"419.8","mat":"SPCC","t":"0.6","w":"102","p":"93","spm":"30~35"},{"id":"M37-14","name":"1862-0041-01","dh":"417.8","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~32"},{"id":"M37-15","name":"1657-127","dh":"448","mat":"SPCC","t":"1.2","w":"90","p":"85","spm":"30~35"},{"id":"M37-16","name":"1781-0001-00","dh":"407.8","mat":"SPCC","t":"0.6","w":"110","p":"102","spm":"30~35"},{"id":"M37-17","name":"1952-367-2","dh":"460.1","mat":"304-2B","t":"0.6","w":"74","p":"72","spm":"25~30"}]},{"no":"38","maker":"국일","ton":"250","items":[{"id":"M38-01","name":"1972-383","dh":"461.6","mat":"SPCC","t":"0.6","w":"114","p":"104","spm":"30~35"},{"id":"M38-02","name":"1952-0056-01","dh":"456.8","mat":"SPCC","t":"0.6","w":"76","p":"74","spm":"25~30"}]},{"no":"39","maker":"국일","ton":"250","items":[{"id":"M39-01","name":"MJH637370","dh":"474","mat":"304-2B","t":"0.8","w":"64","p":"58","spm":"25~30"},{"id":"M39-02","name":"MAG624828","dh":"472","mat":"SPCC","t":"2.3","w":"46","p":"40","spm":"35~40"},{"id":"M39-03","name":"1862-0041-01","dh":"496","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M39-04","name":"1968-364-2","dh":"467","mat":"304-2B","t":"0.6","w":"93","p":"93","spm":"30~35"},{"id":"M39-05","name":"1960-0031-01","dh":"468.4","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"}]},{"no":"40","maker":"심팩","ton":"200","items":[{"id":"M40-01","name":"1551-189","dh":"405.3","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"35~40"},{"id":"M40-02","name":"1959-0024-21","dh":"397.1","mat":"430-2B","t":"0.6","w":"82","p":"80","spm":"35~40"},{"id":"M40-03","name":"1657-127","dh":"446","mat":"SPCC","t":"1.2","w":"90","p":"85","spm":"35~40"},{"id":"M40-04","name":"1873-622-2","dh":"375.6","mat":"430-BA","t":"0.6","w":"92","p":"90","spm":"35~40"},{"id":"M40-05","name":"1974-0023-21","dh":"388.8","mat":"430-2B","t":"0.6","w":"94","p":"92","spm":"24~28"},{"id":"M40-06","name":"1976-04-01 00:00:00","dh":"396.4","mat":"SPCC","t":"0.6","w":"102","p":"90","spm":"35~40"},{"id":"M40-07","name":"1970-372-2","dh":"410.5","mat":"430-BA","t":"0.6","w":"86","p":"84","spm":"35~40"},{"id":"M40-08","name":"1965-326-2","dh":"413.8","mat":"430-BA","t":"0.6","w":"90","p":"87","spm":"35~40"},{"id":"M40-09","name":"1967-392","dh":"375.8","mat":"SPCC","t":"0.6","w":"84","p":"80","spm":"35~40"},{"id":"M40-10","name":"1660-131","dh":"378.3","mat":"430-BA","t":"0.6","w":"78","p":"76","spm":"35~40"},{"id":"M40-11","name":"1973-325","dh":"381.6","mat":"SPCC","t":"0.6","w":"125","p":"107","spm":"35~40"},{"id":"M40-12","name":"1869-621","dh":"369","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"35~40"},{"id":"M40-13","name":"1862-0042-21","dh":"387.2","mat":"430-2B","t":"0.6","w":"80","p":"78","spm":"20~25"},{"id":"M40-14","name":"1968-364","dh":"357","mat":"SPCC","t":"0.6","w":"86","p":"84","spm":"30~35"},{"id":"M40-15","name":"1862-0041-21","dh":"387.4","mat":"430-2B","t":"0.6","w":"80","p":"78","spm":"20~25"}]},{"no":"41","maker":"국일","ton":"200","items":[{"id":"M41-01","name":"1657-130-2","dh":"389","mat":"430-BA","t":"0.8","w":"78","p":"76","spm":"30~35"},{"id":"M41-02","name":"1952-367-2(신형)","dh":"460.5","mat":"304-2B","t":"0.6","w":"74","p":"72","spm":"30~35"},{"id":"M41-03","name":"1861-596","dh":"400.5","mat":"SPCC","t":"0.6","w":"94","p":"92","spm":"35~40"},{"id":"M41-04","name":"1837-0033-01","dh":"409.6","mat":"SPCC","t":"1","w":"70","p":"68","spm":"30~35"},{"id":"M41-05","name":"1952-0056-01","dh":"402.1","mat":"SPCC","t":"0.6","w":"76","p":"74","spm":"25~30"},{"id":"M41-06","name":"1946-0053-01","dh":"389","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"35~40"},{"id":"M41-07","name":"1972-383","dh":"412.1","mat":"SPCC","t":"0.6","w":"114","p":"104","spm":"35~40"}]},{"no":"42","maker":"AIDA","ton":"200","items":[{"id":"M42-01","name":"1952-367-2","dh":"380.25","mat":"304-2B","t":"0.6","w":"76","p":"74","spm":"50"},{"id":"M42-02","name":"1752-293-2","dh":"367.7","mat":"430-2B","t":"0.5","w":"74","p":"70","spm":"50"}]},{"no":"43","maker":"국일","ton":"800","items":[{"id":"M43-01","name":"54610-C1000 (JF)","dh":"689.7","mat":"SPFH590","t":"3.2","w":"284","p":"자동","spm":"18~22"},{"id":"M43-02","name":"54610-D3500 (SV)","dh":"677.2","mat":"SPFH590","t":"3.6","w":"283","p":"자동","spm":"18~22"},{"id":"M43-03","name":"54610-D3000 (TL)","dh":"684.3","mat":"PHT590F","t":"3.6","w":"284.5","p":"자동","spm":"16~18"},{"id":"M43-04","name":"B171000-0013-00(MQ4)","dh":"678","mat":"SPFH590-P","t":"3.2","w":"사급","p":"자동","spm":"18~22"},{"id":"M43-05","name":"(UMA)","dh":"","mat":"","t":"","w":"329.5","p":"자동","spm":"16~18"}]},{"no":"45","maker":"심팩","ton":"300","items":[{"id":"M45-01","name":"Race way   1106","dh":"492.6","mat":"S55CM","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M45-02","name":"Race way   1113","dh":"487.3","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M45-03","name":"Race way   1179","dh":"488.2","mat":"C67SCM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M45-04","name":"Race way   1156","dh":"488.3","mat":"C67SCM","t":"1.25","w":"146","p":"136","spm":"35~40"},{"id":"M45-05","name":"Race way   1159","dh":"488","mat":"C55CM","t":"1.01","w":"144","p":"134","spm":"35~40"},{"id":"M45-06","name":"Race way   1113-2","dh":"495.7","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"}]},{"no":"46","maker":"심팩","ton":"300","items":[{"id":"M46-01","name":"Race way   1113D","dh":"491.2","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M46-02","name":"AB3248-SC-01\n(9BUX)","dh":"487.6","mat":"304-2B","t":"0.5","w":"118","p":"107.5","spm":"22~24"},{"id":"M46-03","name":"Race way   1113-2","dh":"494.4","mat":"S70C","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M46-04","name":"Race way   1179-2","dh":"488.1","mat":"C67CM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M46-05","name":"Race way   1159","dh":"487.4","mat":"S55CM-S","t":"1.01","w":"141","p":"134","spm":"35~40"},{"id":"M46-06","name":"Race way   1156","dh":"486.1","mat":"C67S","t":"1.25","w":"143","p":"136","spm":"35~40"},{"id":"M46-07","name":"Race way   1106","dh":"495.5","mat":"S55C","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M46-08","name":"Race way   1179","dh":"487","mat":"C67S","t":"1.25","w":"137","p":"130","spm":"38~40"},{"id":"M46-09","name":"Race way   1165","dh":"487.5","mat":"S55C","t":"1.01","w":"134","p":"124","spm":"35~40"},{"id":"M46-10","name":"T1 XX","dh":"497","mat":"304-2B","t":"0.5","w":"126","p":"120","spm":"20~25"},{"id":"M46-11","name":"Race way   1113-1","dh":"495.5","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"}]},{"no":"47","maker":"심팩","ton":"300","items":[{"id":"M47-01","name":"Race way   1106","dh":"496.4","mat":"S55CM","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M47-02","name":"Race way   1113","dh":"495.5","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M47-03","name":"Race way   1179","dh":"487.9","mat":"C67SCM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M47-04","name":"Race way   1165","dh":"488.8","mat":"S55CM","t":"1.01","w":"126","p":"124","spm":"35~40"},{"id":"M47-05","name":"Race way   1159","dh":"487.6","mat":"S55CM","t":"1.01","w":"144","p":"134","spm":"35~40"},{"id":"M47-06","name":"Race way   1113-2","dh":"495.2","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M47-07","name":"Race way   1113D","dh":"491.9","mat":"C67S","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M47-08","name":"Race way   1156","dh":"486.9","mat":"C67S","t":"1.25","w":"143","p":"136","spm":"35~40"}]},{"no":"48","maker":"심팩","ton":"300","items":[{"id":"M48-01","name":"Race way   1113","dh":"489.3","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M48-02","name":"Race way   1165","dh":"491.5","mat":"S55CM","t":"1.01","w":"134","p":"124","spm":"35~40"},{"id":"M48-03","name":"Race way   1159B","dh":"490.8","mat":"S55CM","t":"1.01","w":"144","p":"134","spm":"35~40"},{"id":"M48-04","name":"Race way   1106","dh":"498.7","mat":"S55CM","t":"101","w":"126","p":"116","spm":"35~40"},{"id":"M48-05","name":"Race way   1113-2","dh":"497.6","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M48-06","name":"Race way   1156","dh":"490.1","mat":"C67CM","t":"1.25","w":"146","p":"136","spm":"35~40"},{"id":"M48-07","name":"Race way   1179-2","dh":"491.4","mat":"C67CM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M48-08","name":"Race way   1106-2","dh":"494.5","mat":"S55CM","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M48-09","name":"Race way   1113D","dh":"494.4","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"}]},{"no":"49","maker":"심팩","ton":"300","items":[{"id":"M49-01","name":"Race way   1179-3","dh":"490.5","mat":"C67S","t":"1.25","w":"248","p":"67~68","spm":"34"}]}]};
 const FIELDS={dh:"다이하이트",mat:"재질",t:"두께T",w:"폭W",p:"피치P",spm:"최대SPM"};
 const NOTE="3G Pack Seal류 내철 1번철 / 외철 2번철";
@@ -2649,7 +2675,9 @@ const VIEWS={std:"설비별 표준서",search:"품번별 조회",req:"수정요�
 const GRP={std:"a",search:"a",req:"b",check:"b",hist:"b",qr:"c"};
 
 /* ═══════════ 상태 ═══════════ */
-let S=null,view="std",cur=null,isAdmin=false,me="",qrMode=false,selId="";
+let S=null,view="std",cur=null,auth=null,me="",qrMode=false,selId="";
+const isAdmin  = ()=> !!auth && auth.role==="approver";   /* 승인 권한 */
+const canEdit  = ()=> !!auth;                              /* 표준 수정 권한 */
 let fq={pn:"",mat:"",chk:""}, sq="";
 let editMode=false, edits={};          /* 표 셀 직접 편집 */
 const EDF=[["name","기종명"],["dh","다이하이트"],["mat","재질"],["t","두께T"],["w","폭W"],["p","피치P"],["spm","최대SPM"]];
@@ -2687,6 +2715,7 @@ function normalize(d){
   d.machines=Array.isArray(d.machines)&&d.machines.length?d.machines:SEED.machines;
   d.machines.forEach(m=>{m.no=String(m.no); m.items=(m.items||[]).map(it=>({id:it.id||uid(),...it}));});
   d.reqs=d.reqs||[]; d.logs=d.logs||[]; d.checks=d.checks||[];
+  d.reqs.forEach(r=>{ if(!Array.isArray(r.changes)) r.changes=[{field:r.field,old:r.old,new:r.new}]; });
   d.ua=d.ua||"2000-01-01T00:00:00.000Z";   /* 없으면 과거 — 서버본이 이기게 */
   return d;
 }
@@ -2740,12 +2769,26 @@ function head(extra,acts){
     <h2>${esc(VIEWS[view])}${extra?`<span class="sub">${extra}</span>`:""}</h2>
     ${acts?`<div class="acts noprint">${acts}</div>`:""}</div>`;
 }
-/* 관리자 전용 동작 — 미인증이면 PIN을 묻고 이어서 실행 */
-function needAdmin(fn){
-  if(isAdmin) return fn();
-  const p=prompt("관리자 PIN을 입력하세요"); if(p===null) return;
-  if(p!==ADMIN_PIN) return alert("PIN이 올바르지 않습니다.");
-  isAdmin=true; paintAdmin(); render(); fn();
+/* 수정 권한이 필요한 동작 — 미로그인이면 PIN을 묻고 이어서 실행 */
+function needEdit(fn){
+  if(canEdit()) return fn();
+  if(!doLogin()) return;
+  fn();
+}
+/* 로그인 필요 안내 → 바로 PIN 입력 */
+function needLogin(){
+  alert("기록·요청에는 PIN 로그인이 필요합니다.\n승인자 4001·4003·4005 / 수정가능자 2001·2003·2004·2006·2007");
+  doLogin();
+}
+/* PIN 로그인 — 성공하면 auth 설정 후 true */
+function doLogin(){
+  const p=prompt("접속 PIN을 입력하세요"); if(p===null) return false;
+  const a=ACCOUNTS[(p||"").trim()];
+  if(!a){ alert("등록되지 않은 PIN입니다."); return false; }
+  auth={...a}; me=a.name;
+  lsSet("pss.me",me); lsSet("pss.role",a.role);
+  paintUser(); render();
+  return true;
 }
 function bar(label){
   return `<div class="panel noprint"><div class="fl">
@@ -2790,9 +2833,10 @@ function vStd(){
       <td class="num">${esc(it.p)}</td><td class="num">${esc(it.spm)}</td>
       <td>${c?`<span class="tag ${c.ok?"g":"r"}" title="${esc(c.by)} ${fmtTs(c.ts)}">${c.ok?"OK":"NG"} ${esc(c.actual)}</span>`:'<span class="tag d">미점검</span>'}</td>
       <td class="noprint"><button class="s p" data-act="check" data-m="${esc(m.no)}" data-i="${esc(it.id)}">세팅체크</button>
-        ${isAdmin
+        ${canEdit()
           ? `<button class="s" data-act="edit" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정</button>
-             <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제</button>`
+             <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제</button>
+             <button class="s" data-act="req" data-m="${esc(m.no)}" data-i="${esc(it.id)}" title="승인을 받아 반영하려면">요청</button>`
           : `<button class="s" data-act="req" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정요청</button>`}
       </td></tr>`;}).join("");
 
@@ -2804,16 +2848,16 @@ function vStd(){
       <div class="cspec">${esc(spec)}</div>
       <div class="cact"><button class="p" data-act="check" data-m="${esc(m.no)}" data-i="${esc(it.id)}">세팅체크</button>
         <button data-act="req" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정요청</button>
-        ${isAdmin?`<button class="s" data-act="edit" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정</button>
+        ${canEdit()?`<button class="s" data-act="edit" data-m="${esc(m.no)}" data-i="${esc(it.id)}">수정</button>
           <button class="s d" data-act="del" data-m="${esc(m.no)}" data-i="${esc(it.id)}">삭제</button>`:""}
         ${c?`<span class="tag ${c.ok?"g":"r"}">${c.ok?"OK":"NG"} ${esc(c.actual)} · ${fmtTs(c.ts).slice(5,10)}</span>`:""}</div></div>`;}).join("");
 
   $("#main").innerHTML = head(`${esc(m.maker)} ${esc(m.ton)}톤 ${esc(m.no)}호기 · ${esc(docNo(m))}`,
     editMode
     ? `<button class="p" id="bSave">저장 (${chgCnt()}건)</button><button id="bCancel">취소</button>`
-    : `<button id="bEdit">✎ 표 직접수정${isAdmin?"":" 🔒"}</button>
-       <button class="g" id="bAdd">＋ 기종 추가${isAdmin?"":" 🔒"}</button>
-       <button id="bMach">⚙ 설비 관리${isAdmin?"":" 🔒"}</button>`) + `
+    : `<button id="bEdit">✎ 표 직접수정${canEdit()?"":" 🔒"}</button>
+       <button class="g" id="bAdd">＋ 기종 추가${canEdit()?"":" 🔒"}</button>
+       <button id="bMach">⚙ 설비 관리${canEdit()?"":" 🔒"}</button>`) + `
     ${qrMode?`<div class="fieldbar"><div class="no">${esc(m.no)}<span>호기</span></div>
       <div class="tx">${esc(m.maker)} ${esc(m.ton)}톤 · QR 스캔으로 열림<br>세팅 전 표준값을 확인하고, 금형 교체 후 [세팅체크]를 기록하세요.</div>
       <div class="rv">${revNo(S.rev)}</div></div>`:""}
@@ -2855,9 +2899,9 @@ function vStd(){
         <span class="grow" style="text-align:right">비고 : ${esc(NOTE)} · 승인 품질관리팀</span></div>
     </div>`;
   const cb=$("#condBox"); if(cb) $("#condTg").onclick=()=>cb.classList.toggle("open");
-  const ba=$("#bAdd"); if(ba) ba.onclick=()=>needAdmin(()=>openItem(cur.no,null));
-  const bm=$("#bMach"); if(bm) bm.onclick=()=>needAdmin(openMachine);
-  const be=$("#bEdit"); if(be) be.onclick=()=>needAdmin(()=>{editMode=true; edits={}; render();});
+  const ba=$("#bAdd"); if(ba) ba.onclick=()=>needEdit(()=>openItem(cur.no,null));
+  const bm=$("#bMach"); if(bm) bm.onclick=()=>needEdit(openMachine);
+  const be=$("#bEdit"); if(be) be.onclick=()=>needEdit(()=>{editMode=true; edits={}; render();});
   const bc=$("#bCancel"); if(bc) bc.onclick=()=>{
     if(chgCnt()&&!confirm("고친 내용을 버리고 편집을 끝낼까요?")) return;
     editMode=false; edits={}; render();};
@@ -2921,17 +2965,17 @@ function vSearch(){
 function vReq(){
   const list=S.reqs.slice().sort((a,b)=>b.ts.localeCompare(a.ts));
   const tr=list.map(r=>{
-    const act=(r.status==="pending"&&isAdmin)
+    const act=(r.status==="pending"&&isAdmin())
       ? `<button class="s g" data-act="approve" data-r="${esc(r.id)}">승인</button>
          <button class="s d" data-act="reject" data-r="${esc(r.id)}">반려</button>`
       : (r.status==="pending"?'<span class="muted">승인 대기</span>':`<span class="muted">${esc(r.appBy||"")}</span>`);
     return `<tr><td class="muted">${fmtTs(r.ts)}</td><td><b>${esc(r.mno)}호기</b></td><td>${esc(r.itemName)}</td>
-      <td>${esc(FIELDS[r.field]||r.field)}</td>
-      <td class="num muted">${esc(r.old)}</td><td class="dh">${esc(r.new)}</td>
-      <td style="white-space:normal;max-width:280px">${esc(r.reason||"")}</td><td>${esc(r.by)}</td>
+      <td style="white-space:normal;min-width:210px">${(r.changes||[]).map(c=>
+        `${esc(FIELDS[c.field]||c.field)} <span class="muted">${esc(c.old||"—")}</span> → <b class="dh" style="display:inline">${esc(c.new||"—")}</b>`).join("<br>")}</td>
+      <td style="white-space:normal;max-width:260px">${esc(r.reason||"")}</td><td>${esc(r.by)}</td>
       <td><span class="tag ${r.status==="pending"?"a":r.status==="approved"?"g":"r"}">${r.status==="pending"?"대기":r.status==="approved"?"승인":"반려"}</span></td>
       <td class="noprint">${act}</td></tr>`;}).join("");
-  $("#main").innerHTML = head(isAdmin?"관리자 인증됨":"승인하려면 관리자 인증") + `
+  $("#main").innerHTML = head(isAdmin()?`${esc(auth.name)} · 승인자`:auth?`${esc(auth.name)} · 수정자 — 승인 권한 없음`:"승인하려면 승인자 PIN 로그인") + `
     <div class="grid g4 noprint" style="margin-bottom:14px">
       <div class="kpi"><small>전체 요청</small><b>${list.length}</b></div>
       <div class="kpi ${pendCnt()?"warn":""}"><small>승인 대기</small><b>${pendCnt()}</b><em>품질 검토 필요</em></div>
@@ -2939,11 +2983,13 @@ function vReq(){
       <div class="kpi"><small>반려</small><b>${list.filter(r=>r.status==="rejected").length}</b></div>
     </div>
     ${bar("승인 시 표준서에 즉시 반영되고 개정번호가 올라갑니다.")}
-    <div class="panel"><h3>수정요청 목록 <span class="tag">${revNo(S.rev)}</span></h3>
-      <div class="tw"><table><thead><tr><th>요청일시</th><th>설비</th><th>기종명</th><th>항목</th>
-        <th class="num">현재값</th><th class="num">변경값</th><th>변경사유</th><th>요청자</th><th>상태</th>
-        <th class="noprint">처리</th></tr></thead>
-        <tbody>${tr||`<tr><td colspan="10" class="empty">등록된 수정요청이 없습니다.</td></tr>`}</tbody></table></div>
+    <div class="panel"><h3>수정요청 목록 <span class="tag">${revNo(S.rev)}</span>
+      ${isAdmin()?`<span class="tag g">${esc(auth.name)} · 승인자 — 승인 가능</span>`
+        :auth?`<span class="tag a">${esc(auth.name)} · 수정자 — 승인 불가 (승인자 PIN 필요)</span>`
+             :'<span class="tag d">조회 권한 — 승인하려면 승인자 PIN 로그인</span>'}</h3>
+      <div class="tw"><table><thead><tr><th>요청일시</th><th>설비</th><th>기종명</th><th>변경 내용</th>
+        <th>변경사유</th><th>요청자</th><th>상태</th><th class="noprint">처리</th></tr></thead>
+        <tbody>${tr||`<tr><td colspan="8" class="empty">등록된 수정요청이 없습니다.</td></tr>`}</tbody></table></div>
       <div class="muted" style="font-size:12px;margin-top:9px">IATF 16949 7.5.3 문서화된 정보의 관리 — 변경 요청·승인 기록 보존</div>
     </div>`;
   bindBar();
@@ -2957,6 +3003,8 @@ function vCheck(){
       <td>${esc(c.itemName)}</td><td class="num">${esc(c.std)}</td><td class="num"><b>${esc(c.actual)}</b></td>
       <td class="num" style="color:${c.ok?"var(--muted)":"var(--red)"}">${c.dev>0?"+":""}${esc(c.dev)}</td>
       <td><span class="tag ${c.ok?"g":"r"}">${c.ok?"합격":"불합격"}</span></td>
+      <td class="num">${c.pAct?`${esc(c.pAct)}${c.pAct!==c.pStd?`<span class="tag a" style="margin-left:4px">≠${esc(c.pStd||"—")}</span>`:""}`:'<span class="muted">—</span>'}</td>
+      <td class="num">${c.sAct?`${esc(c.sAct)}${c.sAct!==c.sStd?`<span class="tag a" style="margin-left:4px">≠${esc(c.sStd||"—")}</span>`:""}`:'<span class="muted">—</span>'}</td>
       <td>${esc(c.by)}</td><td style="white-space:normal;max-width:240px">${esc(c.note||"")}</td></tr>`).join("");
   $("#main").innerHTML = head(`판정기준 표준값 ±${TOL}mm`) + `
     <div class="readout">
@@ -2968,8 +3016,9 @@ function vCheck(){
     ${bar("금형 교체 후 실측 다이하이트 기록 — 초물검사 · 4M 변경 근거자료")}
     <div class="panel"><h3>세팅 점검기록</h3>
       <div class="tw"><table><thead><tr><th>점검일시</th><th>설비</th><th>기종명</th><th class="num">표준값</th>
-        <th class="num">실측값</th><th class="num">편차</th><th>판정</th><th>점검자</th><th>비고</th></tr></thead>
-        <tbody>${tr||`<tr><td colspan="9" class="empty">세팅 점검기록이 없습니다.</td></tr>`}</tbody></table></div></div>`;
+        <th class="num">실측값</th><th class="num">편차</th><th>판정</th>
+        <th class="num">실제피치</th><th class="num">실제SPM</th><th>점검자</th><th>비고</th></tr></thead>
+        <tbody>${tr||`<tr><td colspan="11" class="empty">세팅 점검기록이 없습니다.</td></tr>`}</tbody></table></div></div>`;
   bindBar();
 }
 
@@ -3038,9 +3087,16 @@ function openCheck(mno,itemId){
   const m=mOf(mno),it=itOf(m,itemId); if(!it)return;
   openModal(`세팅 점검 · ${esc(m.no)}호기`,
     `<div class="info">기종 <b>${esc(it.name)}</b> · 표준 다이하이트 <b>${esc(it.dh)}</b> mm (허용 ±${TOL})</div>
-     <div class="fld"><label>실측 다이하이트 (mm)</label>
+     <div class="fld"><label>실측 다이하이트 (mm) <span style="color:var(--red)">*</span></label>
        <input id="ckv" type="number" step="0.1" inputmode="decimal" placeholder="예: ${esc(it.dh)}"></div>
      <div id="ckJ"></div>
+     <div class="row2">
+       <div class="fld"><label>실제 피치P <span class="muted">(표준 ${esc(it.p)||"—"})</span></label>
+         <input id="ckp" placeholder="${esc(it.p)||"미기록"}"></div>
+       <div class="fld"><label>실제 SPM <span class="muted">(표준 ${esc(it.spm)||"—"})</span></label>
+         <input id="cks" placeholder="${esc(it.spm)||"미기록"}"></div>
+     </div>
+     <div id="ckD"></div>
      <div class="fld"><label>비고</label><input id="ckn" placeholder="금형 교체 후 초물 확인 등"></div>`,
     `<button onclick="closeModal()">취소</button><button class="p" id="ckS">기록 저장</button>`);
   const std=parseFloat(it.dh);
@@ -3050,15 +3106,27 @@ function openCheck(mno,itemId){
     j.innerHTML=`<div class="judge ${ok?"o":"n"}">${ok?"✓ 합격":"✕ 불합격 — 재조정 필요"}
       <small>편차 ${dev>0?"+":""}${dev.toFixed(2)}mm / 허용 ±${TOL}</small></div>`;
     return {dev,ok};};
+  const diffChk=()=>{
+    const pv=($("#ckp").value||"").trim(), sv=($("#cks").value||"").trim();
+    const d=[];
+    if(pv && pv!==String(it.p??"")) d.push(`피치 표준 ${it.p||"—"} → 실제 ${pv}`);
+    if(sv && sv!==String(it.spm??"")) d.push(`SPM 표준 ${it.spm||"—"} → 실제 ${sv}`);
+    $("#ckD").innerHTML = d.length
+      ? `<div class="judge n" style="font-size:13px">⚠ 표준과 다름<small>${esc(d.join(" · "))} — 표준값을 바꿔야 하면 저장 후 [수정요청]을 올리세요</small></div>` : "";
+  };
   $("#ckv").addEventListener("input",judge);
+  $("#ckp").addEventListener("input",diffChk);
+  $("#cks").addEventListener("input",diffChk);
   $("#ckS").onclick=async()=>{
     const v=parseFloat($("#ckv").value);
     if(isNaN(v))return alert("실측값을 입력하세요.");
-    if(!me)return alert("상단에서 점검자를 선택하세요.");
+    if(!auth) return needLogin();
     const r=judge();
     $("#ckS").disabled=true;
     await commit(()=>{S.checks.unshift({id:uid(),ts:nowISO(),mno:String(mno),itemId,itemName:it.name,std:it.dh,
-      actual:String(v),dev:r.dev.toFixed(2),ok:r.ok,by:me,note:$("#ckn").value.trim()});
+      actual:String(v),dev:r.dev.toFixed(2),ok:r.ok,by:me,note:$("#ckn").value.trim(),
+      pStd:String(it.p??""),pAct:($("#ckp").value||"").trim(),
+      sStd:String(it.spm??""),sAct:($("#cks").value||"").trim()});
       if(S.checks.length>1500) S.checks.length=1500;});
     closeModal();
     if(!r.ok) setTimeout(()=>{if(confirm("불합격으로 기록했습니다.\n표준값 자체를 바꿔야 한다면 수정요청을 올리시겠습니까?")) openReq(mno,itemId,"dh",String(v));},100);
@@ -3067,45 +3135,68 @@ function openCheck(mno,itemId){
 }
 function openReq(mno,itemId,preField,preVal){
   const m=mOf(mno),it=itOf(m,itemId); if(!it)return;
+  const F=[["dh","다이하이트 (mm)"],["mat","재질"],["t","두께T (mm)"],
+           ["w","폭W (mm)"],["p","피치P (mm)"],["spm","최대SPM"]];
   openModal(`수정요청 등록 · ${esc(m.no)}호기`,
-    `<div class="info">기종 <b>${esc(it.name)}</b> · 승인 시 표준서에 반영되고 개정번호가 올라갑니다.</div>
-     <div class="row2">
-       <div class="fld"><label>변경 항목</label><select id="rqf">
-         ${Object.entries(FIELDS).map(([k,v])=>`<option value="${k}"${k===(preField||"dh")?" selected":""}>${v}</option>`).join("")}</select></div>
-       <div class="fld"><label>현재 값</label><input id="rqo" readonly></div></div>
-     <div class="fld"><label>변경할 값</label><input id="rqn" value="${esc(preVal||"")}" placeholder="새 값"></div>
-     <div class="fld"><label>변경 사유 (필수)</label>
+    `<div class="info">기종 <b>${esc(it.name)}</b> · 바꿀 항목만 고치세요. 건드리지 않은 항목은 그대로 둡니다.
+      <br>품질 승인 후 표준서에 반영되고 개정번호가 올라갑니다.</div>
+     ${F.map(([k,lbl])=>`<div class="fld rqf">
+        <label>${lbl} <span class="muted">현재 ${esc(String(it[k]??"")||"—")}</span></label>
+        <input id="rq_${k}" data-k="${k}" value="${esc(k===preField&&preVal!=null?preVal:String(it[k]??""))}"></div>`).join("")}
+     <div id="rqSum"></div>
+     <div class="fld"><label>변경 사유 <span style="color:var(--red)">*</span></label>
        <textarea id="rqr" placeholder="예) 금형 재연마로 다이하이트 상승 — 초물 실측 3회 평균"></textarea></div>`,
     `<button onclick="closeModal()">취소</button><button class="p" id="rqS">요청 등록</button>`);
-  const sync=()=>{$("#rqo").value=it[$("#rqf").value]??"";};
-  $("#rqf").addEventListener("change",sync); sync();
+  const diff=()=>{
+    const d=[];
+    F.forEach(([k,lbl])=>{
+      const inp=$("#rq_"+k), nv=(inp.value||"").trim(), ov=String(it[k]??"");
+      const chg=nv!==ov;
+      inp.style.background = chg?"#FFF6DB":"";
+      inp.style.borderColor = chg?"var(--amber)":"";
+      inp.style.fontWeight = chg?"700":"";
+      if(chg) d.push({k,lbl:FIELDS[k]||k,old:ov,nv});
+    });
+    $("#rqSum").innerHTML = d.length
+      ? `<div class="info" style="border-left-color:var(--amber)"><b>변경 ${d.length}건</b><br>${
+          d.map(x=>`${esc(x.lbl)} : ${esc(x.old||"—")} → <b>${esc(x.nv||"—")}</b>`).join("<br>")}</div>`
+      : `<div class="info">아직 바꾼 항목이 없습니다.</div>`;
+    return d;
+  };
+  F.forEach(([k])=>$("#rq_"+k).addEventListener("input",diff));
+  diff();
   $("#rqS").onclick=async()=>{
-    const f=$("#rqf").value,nv=$("#rqn").value.trim(),rs=$("#rqr").value.trim();
-    if(!nv)return alert("변경할 값을 입력하세요.");
-    if(!rs)return alert("변경 사유는 필수입니다.");
-    if(!me)return alert("상단에서 요청자를 선택하세요.");
-    if(String(it[f]??"")===nv)return alert("현재 값과 동일합니다.");
+    const d=diff(), rs=$("#rqr").value.trim();
+    if(!d.length) return alert("바꿀 항목을 하나 이상 고치세요.");
+    if(d.some(x=>x.k==="dh"&&(!x.nv||isNaN(parseFloat(x.nv))))) return alert("다이하이트는 숫자로 입력하세요.");
+    if(!rs) return alert("변경 사유는 필수입니다.");
+    if(!auth) return needLogin();
     $("#rqS").disabled=true;
     await commit(()=>{S.reqs.unshift({id:uid(),ts:nowISO(),by:me,mno:String(mno),itemId,itemName:it.name,
-      field:f,old:String(it[f]??""),new:nv,reason:rs,status:"pending"});});
-    closeModal(); alert("수정요청을 등록했습니다.\n품질 승인 후 표준서에 반영됩니다.");
+      changes:d.map(x=>({field:x.k,old:x.old,new:x.nv})),reason:rs,status:"pending"});});
+    closeModal();
+    alert(`수정요청 ${d.length}건을 등록했습니다.\n품질 승인 후 표준서에 반영됩니다.`);
   };
 }
+
 async function decide(reqId,ok){
-  if(!isAdmin)return alert("관리자 인증이 필요합니다.");
+  if(!isAdmin())return alert("승인 권한이 없습니다. 승인자 PIN으로 로그인하세요.");
   const r=S.reqs.find(x=>x.id===reqId); if(!r||r.status!=="pending")return;
-  const msg=ok?`승인하면 표준서에 반영되고 개정번호가 ${revNo(S.rev+1)} 로 올라갑니다.\n\n${r.mno}호기 ${r.itemName}\n${FIELDS[r.field]}: ${r.old} → ${r.new}\n\n진행할까요?`
+  const lines=(r.changes||[]).map(c=>`${FIELDS[c.field]||c.field}: ${c.old||"—"} → ${c.new||"—"}`).join("\n");
+  const msg=ok?`승인하면 표준서에 반영되고 개정번호가 ${revNo(S.rev+1)} 로 올라갑니다.\n\n${r.mno}호기 ${r.itemName}\n${lines}\n\n진행할까요?`
               :"이 요청을 반려합니다. 진행할까요?";
   if(!confirm(msg))return;
   await commit(()=>{
     const rr=S.reqs.find(x=>x.id===reqId); if(!rr||rr.status!=="pending")return;
-    rr.status=ok?"approved":"rejected"; rr.appBy=me||"관리자"; rr.appTs=nowISO();
+    rr.status=ok?"approved":"rejected"; rr.appBy=(auth&&auth.name)||me||"관리자"; rr.appTs=nowISO();
     if(ok){
       const mm=mOf(rr.mno),ii=itOf(mm,rr.itemId); if(!ii)return;
-      const old=String(ii[rr.field]??""); ii[rr.field]=rr.new;
       S.rev=S.rev+1; S.revDate=today();
-      S.logs.unshift({id:uid(),ts:nowISO(),rev:S.rev,act:"req",mno:rr.mno,itemId:rr.itemId,itemName:rr.itemName,
-        field:rr.field,old,new:rr.new,reason:rr.reason,by:rr.by,appBy:rr.appBy,reqId:rr.id});
+      (rr.changes||[]).forEach(c=>{
+        const old=String(ii[c.field]??""); ii[c.field]=c.new;
+        S.logs.unshift({id:uid(),ts:nowISO(),rev:S.rev,act:"req",mno:rr.mno,itemId:rr.itemId,itemName:rr.itemName,
+          field:FIELDS[c.field]||c.field,old,new:c.new,reason:rr.reason,by:rr.by,appBy:rr.appBy,reqId:rr.id});
+      });
     }});
   alert(ok?`반영 완료 — ${revNo(S.rev)}`:"반려 처리했습니다.");
 }
@@ -3116,7 +3207,7 @@ async function decide(reqId,ok){
 function saveEdits(){
   const n=chgCnt();
   if(!n) return alert("고친 내용이 없습니다.");
-  if(!me) return alert("상단에서 사용자를 선택하세요.");
+  if(!auth) return needLogin();
   const m=cur, list=[];
   Object.keys(edits).forEach(id=>{
     const it=itOf(m,id); if(!it) return;
@@ -3162,7 +3253,7 @@ function saveEdits(){
 const ITF=[["name","기종명(품번)","text"],["dh","다이하이트 (mm)","num"],["mat","재질","text"],
            ["t","두께T (mm)","num"],["w","폭W (mm)","text"],["p","피치P (mm)","text"],["spm","최대SPM","text"]];
 function openItem(mno,itemId){
-  if(!isAdmin) return alert("관리자 인증이 필요합니다.");
+  if(!canEdit()) return alert("수정 권한이 없습니다. PIN으로 로그인하세요.");
   const m=mOf(mno), it=itemId?itOf(m,itemId):null, isNew=!it;
   openModal(`${isNew?"기종 추가":"기종 수정"} · ${esc(m.no)}호기`,
     `<div class="info">${isNew?`<b>${esc(m.maker)} ${esc(m.ton)}톤 ${esc(m.no)}호기</b> 에 새 기종을 등록합니다.`
@@ -3193,7 +3284,7 @@ function openItem(mno,itemId){
     if(!v.dh) return alert("다이하이트를 입력하세요.");
     if(isNaN(parseFloat(v.dh))) return alert("다이하이트는 숫자로 입력하세요.");
     if(!rs) return alert(isNew?"등록 사유는 필수입니다.":"변경 사유는 필수입니다.");
-    if(!me) return alert("상단에서 사용자를 선택하세요.");
+    if(!auth) return needLogin();
     const dup=m.items.find(x=>x.name===v.name && x.id!==itemId);
     if(dup && !confirm(`같은 기종명이 이미 있습니다.\n그래도 ${isNew?"등록":"저장"}할까요?`)) return;
     $("#itS").disabled=true;
@@ -3225,7 +3316,7 @@ function openItem(mno,itemId){
 
 /* ═══ 관리자 : 기종 삭제 ═══ */
 function delItem(mno,itemId){
-  if(!isAdmin) return alert("관리자 인증이 필요합니다.");
+  if(!canEdit()) return alert("수정 권한이 없습니다. PIN으로 로그인하세요.");
   const m=mOf(mno), it=itOf(m,itemId); if(!it) return;
   const ck=S.checks.filter(c=>c.mno===String(mno)&&c.itemId===itemId).length;
   openModal(`기종 삭제 · ${esc(m.no)}호기`,
@@ -3238,7 +3329,7 @@ function delItem(mno,itemId){
   $("#dlS").onclick=async()=>{
     const rs=$("#dlr").value.trim();
     if(!rs) return alert("삭제 사유는 필수입니다.");
-    if(!me) return alert("상단에서 사용자를 선택하세요.");
+    if(!auth) return needLogin();
     if(!confirm(`${it.name} 을 표준서에서 삭제합니다.\n진행할까요?`)) return;
     $("#dlS").disabled=true;
     await commit(()=>{
@@ -3259,7 +3350,7 @@ function delItem(mno,itemId){
 
 /* ═══ 관리자 : 설비 관리 ═══ */
 function openMachine(){
-  if(!isAdmin) return alert("관리자 인증이 필요합니다.");
+  if(!canEdit()) return alert("수정 권한이 없습니다. PIN으로 로그인하세요.");
   const rows=S.machines.map(m=>`<tr><td><b>${esc(m.no)}호기</b></td><td>${esc(m.maker)}</td>
       <td class="num">${esc(m.ton)}톤</td><td class="num">${m.items.length}종</td>
       <td><button class="s d" data-mdel="${esc(m.no)}"${m.items.length?' title="등록 기종을 먼저 삭제하세요"':""}>삭제</button></td></tr>`).join("");
@@ -3279,7 +3370,7 @@ function openMachine(){
     if(!no||!mk||!tn) return alert("호기 · 제조사 · 톤수를 모두 입력하세요.");
     if(!/^\d+$/.test(no)) return alert("호기는 숫자로 입력하세요.");
     if(mOf(no)) return alert(no+"호기는 이미 등록되어 있습니다.");
-    if(!me) return alert("상단에서 사용자를 선택하세요.");
+    if(!auth) return needLogin();
     $("#mAdd").disabled=true;
     await commit(()=>{
       S.machines.push({no:String(no),maker:mk,ton:tn,items:[]});
@@ -3326,12 +3417,16 @@ function exportCsv(){
       rows.push([m.no,`${m.maker} ${m.ton}톤`,it.name,it.dh,it.mat,it.t,it.w,it.p,it.spm]);}));
     csvDown("품번별조회",["호기","설비","기종명","다이하이트","재질","두께T","폭W","피치P","최대SPM"],rows);
   }else if(view==="req"){
-    csvDown("수정요청",["요청일시","호기","기종명","항목","현재값","변경값","변경사유","요청자","상태","승인자","처리일시"],
-      S.reqs.map(r=>[fmtTs(r.ts),r.mno,r.itemName,FIELDS[r.field]||r.field,r.old,r.new,r.reason,r.by,
-        r.status==="pending"?"대기":r.status==="approved"?"승인":"반려",r.appBy||"",r.appTs?fmtTs(r.appTs):""]));
+    const rows=[];
+    S.reqs.forEach(r=>(r.changes||[]).forEach(c=>rows.push([fmtTs(r.ts),r.mno,r.itemName,
+      FIELDS[c.field]||c.field,c.old,c.new,r.reason,r.by,
+      r.status==="pending"?"대기":r.status==="approved"?"승인":"반려",r.appBy||"",r.appTs?fmtTs(r.appTs):""])));
+    csvDown("수정요청",["요청일시","호기","기종명","항목","현재값","변경값","변경사유","요청자","상태","승인자","처리일시"],rows);
   }else if(view==="check"){
-    csvDown("세팅점검기록",["점검일시","호기","기종명","표준값","실측값","편차","판정","점검자","비고"],
-      S.checks.map(c=>[fmtTs(c.ts),c.mno,c.itemName,c.std,c.actual,c.dev,c.ok?"합격":"불합격",c.by,c.note||""]));
+    csvDown("세팅점검기록",["점검일시","호기","기종명","표준DH","실측DH","편차","판정",
+        "표준피치","실제피치","표준SPM","실제SPM","점검자","비고"],
+      S.checks.map(c=>[fmtTs(c.ts),c.mno,c.itemName,c.std,c.actual,c.dev,c.ok?"합격":"불합격",
+        c.pStd||"",c.pAct||"",c.sStd||"",c.sAct||"",c.by,c.note||""]));
   }else if(view==="hist"){
     const AT={add:"신규",del:"삭제",edit:"수정",mach:"설비",req:"요청승인"};
     csvDown("개정이력",["개정","반영일시","구분","호기","기종명","항목","변경전","변경후","변경사유","요청자","처리자"],
@@ -3388,36 +3483,26 @@ document.addEventListener("click",e=>{
 });
 function doFn(f){ if(f==="print") setTimeout(()=>window.print(),120); else if(f==="csv") setTimeout(exportCsv,120); }
 
-function bindUser(sel){
-  sel.innerHTML=`<option value="">사용자</option>`+USERS.map(u=>`<option>${esc(u)}</option>`).join("");
-  if(me&&!USERS.includes(me)){const o=document.createElement("option"); o.value=me;o.textContent=me; sel.insertBefore(o,sel.lastChild);}
-  sel.value=me;
-  sel.onchange=e=>{
-    me=e.target.value;
-    if(me==="기타"){const n=prompt("이름을 입력하세요");
-      if(n&&n.trim()){me=n.trim(); const o=document.createElement("option"); o.value=me;o.textContent=me;
-        e.target.insertBefore(o,e.target.lastChild); e.target.value=me;} else {me=""; e.target.value="";}}
-    lsSet("pss.me",me);
-    [$("#me1"),$("#me2")].forEach(x=>{ if(!x||x===e.target) return;
-      if(me && ![...x.options].some(o=>o.value===me)){
-        const o2=document.createElement("option"); o2.value=me; o2.textContent=me; x.insertBefore(o2,x.lastChild); }
-      x.value=me; });
-  };
+function paintUser(){
+  const a1=$("#admin1"), a2=$("#admin2"), w1=$("#who1"), w2=$("#who2");
+  if(a1) a1.textContent = auth?"로그아웃":"PIN 로그인";
+  if(a2) a2.textContent = auth?"로그아웃":"로그인";
+  if(a1) a1.classList.toggle("on",!!auth);
+  if(a2) a2.classList.toggle("on",!!auth);
+  const lbl = auth?`${esc(auth.name)} · ${ROLET[auth.role]}`:"";
+  if(w2) w2.innerHTML = auth?`<b>${esc(auth.name)}</b> ${ROLET[auth.role]}`:"미로그인";
+  if(w2) w2.className = "who-t"+(auth?(auth.role==="approver"?" ap":" ed"):"");
+  if(w1) w1.innerHTML = auth?`<b>${esc(auth.name)}</b><span>${ROLET[auth.role]}</span>`:"로그인 안 됨";
+  if(w1) w1.className = "who-n"+(auth?(auth.role==="approver"?" ap":" ed"):"");
 }
-function paintAdmin(){
-  const t2=isAdmin?"관리자 ✓":"관리자", t1=isAdmin?"관리자 인증됨 ✓":"관리자 인증";
-  const a1=$("#admin1"), a2=$("#admin2");
-  if(a1){a1.textContent=t1; a1.classList.toggle("on",isAdmin);}
-  if(a2){a2.textContent=t2; a2.classList.toggle("on",isAdmin);}
+function toggleUser(){
+  if(auth){ if(!confirm(`${auth.name} 로그아웃할까요?`)) return;
+    auth=null; me=""; lsSet("pss.me",""); lsSet("pss.role","");
+    if(editMode){editMode=false; edits={};} paintUser(); render(); return; }
+  doLogin();
 }
-function toggleAdmin(){
-  if(isAdmin){isAdmin=false; paintAdmin(); render(); return;}
-  const p=prompt("관리자 PIN을 입력하세요"); if(p===null)return;
-  if(p===ADMIN_PIN){isAdmin=true; paintAdmin(); render();}
-  else alert("PIN이 올바르지 않습니다.");
-}
-$("#admin1").onclick=toggleAdmin;
-$("#admin2").onclick=toggleAdmin;
+$("#admin1").onclick=toggleUser;
+$("#admin2").onclick=toggleUser;
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!editMode) pull().then(render);});
 window.addEventListener("online",()=>pull().then(render));
 window.addEventListener("resize",()=>{if(innerWidth>900) closeNav();});
@@ -3426,8 +3511,10 @@ window.addEventListener("resize",()=>{if(innerWidth>900) closeNav();});
 (function boot(){
   let local=null; try{local=JSON.parse(lsGet("pss.data")||"null");}catch(e){}
   S=normalize(local||{rev:1,revDate:today(),machines:SEED.machines,ua:"2000-01-01T00:00:00.000Z"});
-  me=lsGet("pss.me")||"";
-  bindUser($("#me1")); bindUser($("#me2"));
+  const sn=lsGet("pss.me")||"", sr=lsGet("pss.role")||"";
+  if(sn&&sr&&Object.values(ACCOUNTS).some(a=>a.name===sn&&a.role===sr)){ auth={name:sn,role:sr}; me=sn; }
+  else { me=""; lsSet("pss.me",""); lsSet("pss.role",""); }   /* 명단에서 빠진 계정 정리 */
+  paintUser();
   const qm=new URLSearchParams(location.search).get("m");
   cur=(qm&&mOf(qm))||mOf(lsGet("pss.machine"))||S.machines[0];
   if(qm&&mOf(qm)){qrMode=true; view="std";}
