@@ -2451,6 +2451,24 @@ main{flex:1;min-width:0;padding:16px 16px 56px}
 .top h2{flex:1;min-width:0}
 .top .sub{font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
 .top .acts{display:flex;gap:7px;flex:none;flex-wrap:wrap}
+
+/* 모바일 숫자 키패드 */
+.kb{position:fixed;left:0;right:0;bottom:0;z-index:400;background:#202833;border-top:1px solid #394555;
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 24px rgba(0,0,0,.35)}
+.kb-hd{display:flex;align-items:center;gap:8px;padding:2px 6px 8px;color:#dce3ec;font-size:12.5px}
+.kb-hd b{color:#fff;font-size:14px}
+.kb-hd .v{margin-left:auto;background:#293441;border:1px solid #394555;border-radius:6px;padding:5px 12px;
+  font-size:17px;font-weight:700;color:#F5B342;min-width:92px;text-align:center;font-variant-numeric:tabular-nums}
+.kb-g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.kb-g button{background:#2E3A49;border:1px solid #3E4B5C;color:#fff;border-radius:8px;
+  padding:13px 0;font-size:19px;font-weight:700;line-height:1}
+.kb-g button:active{background:#3C4A5C}
+.kb-g button.fn{background:#394555;font-size:15px;color:#cfd8e3}
+.kb-g button.ok{background:#D9822B;border-color:#D9822B;color:#202833}
+.kb-g button.del{background:#5A3038;border-color:#6B3A42;color:#FFD9D6}
+.kbpad{height:0}
+body.kb-on .kbpad{height:262px}
+input.kbi{background:#FFFBF0!important;border-color:var(--amber)!important;cursor:pointer}
 .who-t{font-size:11.5px;color:#9aa6b7;white-space:nowrap}
 .who-t b{color:#fff;font-weight:700}
 .who-t.ap b{color:#F5B342}.who-t.ed b{color:#8FD3FF}
@@ -2458,7 +2476,10 @@ main{flex:1;min-width:0;padding:16px 16px 56px}
 .who-n b{display:block;font-size:14px;color:#fff}
 .who-n span{font-size:11px;opacity:.75}
 .who-n.ap b{color:#F5B342}.who-n.ed b{color:#8FD3FF}
-@media(max-width:560px){.top .acts{width:100%}.top .acts button{flex:1}}
+@media(max-width:700px){
+  .top .acts{width:100%;gap:5px}
+  .top .acts button{flex:1 1 0;min-width:0;white-space:nowrap;font-size:11.5px;padding:8px 4px;letter-spacing:-.3px}
+}
 #hamb{background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:15px;line-height:1;flex:none}
 
 .panel{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
@@ -2480,12 +2501,12 @@ main{flex:1;min-width:0;padding:16px 16px 56px}
 
 .tw{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:6px;background:#fff}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{padding:6px 8px;border-bottom:1px solid var(--line2);text-align:left;white-space:nowrap}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line2);text-align:center;white-space:nowrap}
 th{background:#F7F9FB;color:var(--muted);font-weight:600;position:sticky;top:0;z-index:1}
-th.num,td.num{text-align:right}
+th.num,td.num{text-align:center}
 tr:hover td{background:#FAFBFD}
 tr.sel td{background:#EEF4FB}
-td.dh{font-variant-numeric:tabular-nums;text-align:right;font-weight:700;color:var(--steel)}
+td.dh{font-variant-numeric:tabular-nums;text-align:center;font-weight:700;color:var(--steel)}
 .tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600;background:var(--steel2);color:var(--steel)}
 .tag.a{background:var(--amber2);color:#9A5A16}
 .tag.g{background:var(--green2);color:#1E6B41}
@@ -2498,7 +2519,8 @@ td.dh{font-variant-numeric:tabular-nums;text-align:right;font-weight:700;color:v
 td.ecell{padding:2px 4px}
 td.ecell input.ci{width:100%;min-width:64px;border:1px solid var(--line);border-radius:4px;padding:4px 6px;
   font-size:12.5px;background:#fff}
-td.ecell.num input.ci{text-align:right;font-variant-numeric:tabular-nums}
+td.ecell input.ci{text-align:center}
+td.ecell.num input.ci{text-align:center;font-variant-numeric:tabular-nums}
 td.ecell.chg input.ci{background:#FFF6DB;border-color:var(--amber);font-weight:700;color:#7A5A00}
 td.ecell input.ci:focus{outline:2px solid var(--steel);border-color:var(--steel)}
 
@@ -2562,7 +2584,10 @@ td.ecell input.ci:focus{outline:2px solid var(--steel);border-color:var(--steel)
 .info{background:#F7F9FB;border:1px solid var(--line);border-left:3px solid var(--steel);border-radius:6px;
   padding:10px 12px;font-size:13px;color:var(--muted);margin-bottom:12px}
 .info b{color:var(--ink);font-variant-numeric:tabular-nums}
-.judge{border-radius:8px;padding:12px 14px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.judge{border-radius:8px;padding:11px 13px;font-weight:700;font-size:15px;display:flex;align-items:baseline;
+  gap:4px 10px;margin-bottom:12px;flex-wrap:wrap}
+.judge>span:first-child{white-space:nowrap}
+@media(max-width:560px){.judge small{width:100%;line-height:1.5}}
 .judge.o{background:var(--green2);border:1px solid #A9D5BF;color:#1E6B41}
 .judge.n{background:var(--red2);border:1px solid #E8B4AF;color:#9C2F27}
 .judge small{font-weight:600;font-size:12px;opacity:.9;font-variant-numeric:tabular-nums}
@@ -2888,8 +2913,11 @@ function vStd(){
         <span class="tag a">공차 ±${TOL}mm</span>
         ${pend?`<span class="tag r">승인대기 ${pend}</span>`:""}</h3>
       <div class="tw">
-        <table><thead><tr><th class="num">No</th><th>기종명(품번)</th><th class="num">다이하이트</th><th>재질</th>
-          <th class="num">두께T</th><th class="num">폭W</th><th class="num">피치P</th><th class="num">최대SPM</th>
+        <table><colgroup><col style="width:42px"><col style="min-width:158px"><col style="width:94px"><col style="width:86px">
+          <col style="width:66px"><col style="width:66px"><col style="width:66px"><col style="width:86px">
+          <col style="width:104px"><col class="noprint" style="width:200px"></colgroup>
+        <thead><tr><th>No</th><th>기종명(품번)</th><th>다이하이트</th><th>재질</th>
+          <th>두께T</th><th>폭W</th><th>피치P</th><th>최대SPM</th>
           <th>최근점검</th><th class="noprint">작업</th></tr></thead>
         <tbody>${tr||`<tr><td colspan="10" class="empty">조회조건에 맞는 기종이 없습니다.</td></tr>`}</tbody></table>
         <div class="cards">${cards||'<div class="empty">조회조건에 맞는 기종이 없습니다.</div>'}</div>
@@ -2907,6 +2935,8 @@ function vStd(){
     editMode=false; edits={}; render();};
   const bs=$("#bSave"); if(bs) bs.onclick=saveEdits;
   /* 셀 입력 — 렌더를 다시 하지 않고 표시만 갱신 (포커스 유지) */
+  if(isMob()) $$(".ci").forEach(x=>{ if(["dh","t","w","p"].includes(x.dataset.k)) kbAttach([x],false);
+    else if(x.dataset.k==="spm") kbAttach([x],true); });
   $$(".ci").forEach(inp=>{
     inp.oninput=()=>{
       const id=inp.dataset.ci,k=inp.dataset.k,it=itOf(cur,id); if(!it)return;
@@ -2950,9 +2980,12 @@ function vSearch(){
     <div class="panel">
       <h3>조회 결과 <span class="tag">${hits.length}건</span>
         ${hits.length?`<span class="tag a">설비 ${new Set(hits.map(h=>h.m.no)).size}대</span>`:""}</h3>
-      <div class="tw"><table><thead><tr><th>호기</th><th>설비</th><th>기종명(품번)</th><th class="num">다이하이트</th>
-        <th>재질</th><th class="num">두께T</th><th class="num">폭W</th><th class="num">피치P</th>
-        <th class="num">최대SPM</th><th class="noprint">이동</th></tr></thead>
+      <div class="tw"><table><colgroup><col style="width:62px"><col style="width:108px"><col style="min-width:150px">
+        <col style="width:94px"><col style="width:86px"><col style="width:66px"><col style="width:66px">
+        <col style="width:66px"><col style="width:86px"><col class="noprint" style="width:84px"></colgroup>
+        <thead><tr><th>호기</th><th>설비</th><th>기종명(품번)</th><th>다이하이트</th>
+        <th>재질</th><th>두께T</th><th>폭W</th><th>피치P</th>
+        <th>최대SPM</th><th class="noprint">이동</th></tr></thead>
         <tbody>${tr||`<tr><td colspan="10" class="empty">${t?`"${esc(t)}" 조회 결과가 없습니다.`:"품번 일부를 입력하고 조회하세요."}</td></tr>`}</tbody></table>
         <div class="cards">${cards||`<div class="empty">${t?"조회 결과가 없습니다.":"품번 일부를 입력하고 조회하세요."}</div>`}</div></div>
     </div>`;
@@ -2970,9 +3003,9 @@ function vReq(){
          <button class="s d" data-act="reject" data-r="${esc(r.id)}">반려</button>`
       : (r.status==="pending"?'<span class="muted">승인 대기</span>':`<span class="muted">${esc(r.appBy||"")}</span>`);
     return `<tr><td class="muted">${fmtTs(r.ts)}</td><td><b>${esc(r.mno)}호기</b></td><td>${esc(r.itemName)}</td>
-      <td style="white-space:normal;min-width:210px">${(r.changes||[]).map(c=>
+      <td style="white-space:normal;min-width:210px;text-align:center">${(r.changes||[]).map(c=>
         `${esc(FIELDS[c.field]||c.field)} <span class="muted">${esc(c.old||"—")}</span> → <b class="dh" style="display:inline">${esc(c.new||"—")}</b>`).join("<br>")}</td>
-      <td style="white-space:normal;max-width:260px">${esc(r.reason||"")}</td><td>${esc(r.by)}</td>
+      <td style="white-space:normal;max-width:260px;text-align:center">${esc(r.reason||"")}</td><td>${esc(r.by)}</td>
       <td><span class="tag ${r.status==="pending"?"a":r.status==="approved"?"g":"r"}">${r.status==="pending"?"대기":r.status==="approved"?"승인":"반려"}</span></td>
       <td class="noprint">${act}</td></tr>`;}).join("");
   $("#main").innerHTML = head(isAdmin()?`${esc(auth.name)} · 승인자`:auth?`${esc(auth.name)} · 수정자 — 승인 권한 없음`:"승인하려면 승인자 PIN 로그인") + `
@@ -2987,7 +3020,10 @@ function vReq(){
       ${isAdmin()?`<span class="tag g">${esc(auth.name)} · 승인자 — 승인 가능</span>`
         :auth?`<span class="tag a">${esc(auth.name)} · 수정자 — 승인 불가 (승인자 PIN 필요)</span>`
              :'<span class="tag d">조회 권한 — 승인하려면 승인자 PIN 로그인</span>'}</h3>
-      <div class="tw"><table><thead><tr><th>요청일시</th><th>설비</th><th>기종명</th><th>변경 내용</th>
+      <div class="tw"><table><colgroup><col style="width:124px"><col style="width:66px"><col style="min-width:136px">
+        <col style="min-width:220px"><col style="min-width:170px"><col style="width:74px"><col style="width:66px">
+        <col class="noprint" style="width:112px"></colgroup>
+        <thead><tr><th>요청일시</th><th>설비</th><th>기종명</th><th>변경 내용</th>
         <th>변경사유</th><th>요청자</th><th>상태</th><th class="noprint">처리</th></tr></thead>
         <tbody>${tr||`<tr><td colspan="8" class="empty">등록된 수정요청이 없습니다.</td></tr>`}</tbody></table></div>
       <div class="muted" style="font-size:12px;margin-top:9px">IATF 16949 7.5.3 문서화된 정보의 관리 — 변경 요청·승인 기록 보존</div>
@@ -3005,7 +3041,7 @@ function vCheck(){
       <td><span class="tag ${c.ok?"g":"r"}">${c.ok?"합격":"불합격"}</span></td>
       <td class="num">${c.pAct?`${esc(c.pAct)}${c.pAct!==c.pStd?`<span class="tag a" style="margin-left:4px">≠${esc(c.pStd||"—")}</span>`:""}`:'<span class="muted">—</span>'}</td>
       <td class="num">${c.sAct?`${esc(c.sAct)}${c.sAct!==c.sStd?`<span class="tag a" style="margin-left:4px">≠${esc(c.sStd||"—")}</span>`:""}`:'<span class="muted">—</span>'}</td>
-      <td>${esc(c.by)}</td><td style="white-space:normal;max-width:240px">${esc(c.note||"")}</td></tr>`).join("");
+      <td>${esc(c.by)}</td><td style="white-space:normal;max-width:240px;text-align:center">${esc(c.note||"")}</td></tr>`).join("");
   $("#main").innerHTML = head(`판정기준 표준값 ±${TOL}mm`) + `
     <div class="readout">
       <div><small>전체 점검</small><b>${list.length}</b></div>
@@ -3015,9 +3051,12 @@ function vCheck(){
     </div>
     ${bar("금형 교체 후 실측 다이하이트 기록 — 초물검사 · 4M 변경 근거자료")}
     <div class="panel"><h3>세팅 점검기록</h3>
-      <div class="tw"><table><thead><tr><th>점검일시</th><th>설비</th><th>기종명</th><th class="num">표준값</th>
-        <th class="num">실측값</th><th class="num">편차</th><th>판정</th>
-        <th class="num">실제피치</th><th class="num">실제SPM</th><th>점검자</th><th>비고</th></tr></thead>
+      <div class="tw"><table><colgroup><col style="width:124px"><col style="width:66px"><col style="min-width:140px">
+        <col style="width:78px"><col style="width:78px"><col style="width:66px"><col style="width:66px">
+        <col style="width:96px"><col style="width:96px"><col style="width:74px"><col style="min-width:120px"></colgroup>
+        <thead><tr><th>점검일시</th><th>설비</th><th>기종명</th><th>표준값</th>
+        <th>실측값</th><th>편차</th><th>판정</th>
+        <th>실제피치</th><th>실제SPM</th><th>점검자</th><th>비고</th></tr></thead>
         <tbody>${tr||`<tr><td colspan="11" class="empty">세팅 점검기록이 없습니다.</td></tr>`}</tbody></table></div></div>`;
   bindBar();
 }
@@ -3030,16 +3069,19 @@ function vHist(){
     return `<tr><td><span class="tag">${esc(revNo(l.rev))}</span></td><td class="muted">${fmtTs(l.ts)}</td>
       <td><span class="tag ${a[1]}">${a[0]}</span></td>
       <td><b>${esc(l.mno)}호기</b></td><td>${esc(l.itemName)}</td><td>${esc(FIELDS[l.field]||l.field)}</td>
-      <td class="num muted" style="white-space:normal;max-width:190px">${esc(l.old)}</td>
-      <td class="dh" style="white-space:normal;max-width:190px">${esc(l.new)}</td>
-      <td style="white-space:normal;min-width:180px">${esc(l.reason||"")}</td>
+      <td class="num muted" style="white-space:normal;max-width:190px;text-align:center">${esc(l.old)}</td>
+      <td class="dh" style="white-space:normal;max-width:190px;text-align:center">${esc(l.new)}</td>
+      <td style="white-space:normal;min-width:180px;text-align:center">${esc(l.reason||"")}</td>
       <td>${esc(l.by)}</td><td>${esc(l.appBy)}</td></tr>`;}).join("");
   $("#main").innerHTML = head(`현재 ${revNo(S.rev)} · 개정일 ${esc(S.revDate)}`) + `
     ${bar("승인되어 반영된 변경 내역 — 문서 개정 근거")}
     <div class="panel"><h3>개정이력 <span class="tag">${list.length}건</span>
       <span class="tag a">현재 ${revNo(S.rev)}</span></h3>
-      <div class="tw"><table><thead><tr><th>개정</th><th>반영일시</th><th>구분</th><th>설비</th><th>기종명</th><th>항목</th>
-        <th class="num">변경전</th><th class="num">변경후</th><th>변경사유</th><th>요청자</th><th>처리자</th></tr></thead>
+      <div class="tw"><table><colgroup><col style="width:66px"><col style="width:124px"><col style="width:66px">
+        <col style="width:66px"><col style="min-width:136px"><col style="width:84px"><col style="width:110px">
+        <col style="width:110px"><col style="min-width:150px"><col style="width:74px"><col style="width:74px"></colgroup>
+        <thead><tr><th>개정</th><th>반영일시</th><th>구분</th><th>설비</th><th>기종명</th><th>항목</th>
+        <th>변경전</th><th>변경후</th><th>변경사유</th><th>요청자</th><th>처리자</th></tr></thead>
         <tbody>${tr||`<tr><td colspan="11" class="empty">개정 이력이 없습니다 — 최초 제정본(Rev.01) 상태입니다.</td></tr>`}</tbody></table></div>
       <div class="muted" style="font-size:12px;margin-top:9px">최초 제정 Rev.01 · IATF 16949 7.5.3 변경 이력 보존</div>
     </div>`;
@@ -3074,8 +3116,79 @@ function vQr(){
   draw();
 }
 
+
+/* ═══ 모바일 숫자 키패드 ═══
+   휴대폰 기본 키보드가 입력칸을 가리거나 숫자 입력이 불편해 앱 내장 패드를 씁니다.
+   대상 칸은 readonly로 두고 탭하면 패드가 열립니다(삼성 키보드가 inputmode=none을 무시함). */
+const isMob = ()=> innerWidth<=700;
+let kbT=null, kbAllowTilde=false;
+function kbAttach(sels, tilde){
+  if(!isMob()) return;
+  sels.forEach(sel=>{
+    const el = typeof sel==="string" ? $(sel) : sel;
+    if(!el) return;
+    /* number 타입은 "403." 같은 중간 입력을 무효로 보고 값을 비우므로 text로 바꾼다 */
+    if(el.tagName==="INPUT" && el.type==="number") el.type="text";
+    el.readOnly=true; el.classList.add("kbi");
+    el.dataset.kbTilde = tilde?"1":"0";
+    el.addEventListener("click",()=>kbOpen(el));
+    el.addEventListener("focus",()=>kbOpen(el));
+  });
+}
+function kbOpen(el){
+  kbT=el; kbAllowTilde = el.dataset.kbTilde==="1";
+  const lab = (el.closest(".fld")?.querySelector("label")?.textContent||"").replace(/\s+/g," ").trim()
+            || (el.dataset.k?(FIELDS[el.dataset.k]||el.dataset.k):"값 입력");
+  let k=$("#kb");
+  if(!k){ k=document.createElement("div"); k.id="kb"; k.className="kb"; document.body.appendChild(k);
+          const pad=document.createElement("div"); pad.className="kbpad"; document.body.appendChild(pad); }
+  k.innerHTML = `<div class="kb-hd"><b>${esc(lab.split("(")[0].trim())}</b>
+      <span class="v" id="kbV">${esc(el.value||"—")}</span></div>
+    <div class="kb-g">
+      <button data-kb="7">7</button><button data-kb="8">8</button><button data-kb="9">9</button>
+      <button class="fn del" data-kb="bs">← 지움</button>
+      <button data-kb="4">4</button><button data-kb="5">5</button><button data-kb="6">6</button>
+      ${kbAllowTilde?`<button class="fn" data-kb="~">~</button>`:`<button class="fn" data-kb="clr">전체<br>삭제</button>`}
+      <button data-kb="1">1</button><button data-kb="2">2</button><button data-kb="3">3</button>
+      <button class="fn" data-kb=".">.</button>
+      <button data-kb="0">0</button><button data-kb="00">00</button>
+      ${kbAllowTilde?`<button class="fn" data-kb="clr">전체<br>삭제</button>`:`<button class="fn" data-kb="-">-</button>`}
+      <button class="ok" data-kb="ok">확인</button>
+    </div>`;
+  document.body.classList.add("kb-on");
+  k.onclick=e=>{ const b=e.target.closest("[data-kb]"); if(!b) return; kbKey(b.dataset.kb); };
+  el.blur();
+  setTimeout(()=>{ try{ el.scrollIntoView({block:"center",behavior:"smooth"}); }catch(e){} },60);
+}
+function kbClose(){
+  const k=$("#kb"); if(k) k.remove();
+  const pd=document.querySelector(".kbpad"); if(pd) pd.remove();
+  document.body.classList.remove("kb-on"); kbT=null;
+}
+function kbKey(key){
+  if(!kbT) return kbClose();
+  if(key==="ok") { kbT.dispatchEvent(new Event("change",{bubbles:true})); return kbClose(); }
+  let v=kbT.value||"";
+  if(key==="bs") v=v.slice(0,-1);
+  else if(key==="clr") v="";
+  else if(key==="."){ if(!/\.\d*$/.test(v.split("~").pop())) v+="."; }
+  else if(key==="~"){ if(v && !v.includes("~")) v+="~"; }
+  else if(key==="-"){ if(!v) v="-"; }
+  else v+=key;
+  kbT.value=v;
+  const vv=$("#kbV"); if(vv) vv.textContent=v||"—";
+  kbT.dispatchEvent(new Event("input",{bubbles:true}));
+}
+/* 패드 밖을 누르면 닫기 */
+document.addEventListener("click",e=>{
+  if(!$("#kb")) return;
+  if(e.target.closest("#kb")||e.target.closest(".kbi")) return;
+  kbT&&kbT.dispatchEvent(new Event("change",{bubbles:true})); kbClose();
+},true);
+window.addEventListener("resize",()=>{ if(!isMob()&&$("#kb")) kbClose(); });
+
 /* ═══════════ 모달 ═══════════ */
-const closeModal=()=>{$("#modalHost").innerHTML="";};
+const closeModal=()=>{ if(typeof kbClose==="function") kbClose(); $("#modalHost").innerHTML=""; };
 function openModal(title,body,foot){
   $("#modalHost").innerHTML=`<div class="mask" id="mask"><div class="modal" role="dialog" aria-modal="true">
     <div class="mh"><b>${title}</b><button class="x" id="mx" aria-label="닫기">✕</button></div>
@@ -3103,7 +3216,7 @@ function openCheck(mno,itemId){
   const judge=()=>{const v=parseFloat($("#ckv").value),j=$("#ckJ");
     if(isNaN(v)||isNaN(std)){j.innerHTML="";return null;}
     const dev=Math.round((v-std)*100)/100,ok=Math.abs(dev)<=TOL+1e-9;
-    j.innerHTML=`<div class="judge ${ok?"o":"n"}">${ok?"✓ 합격":"✕ 불합격 — 재조정 필요"}
+    j.innerHTML=`<div class="judge ${ok?"o":"n"}"><span>${ok?"✓ 합격":"✕ 불합격 — 재조정 필요"}</span>
       <small>편차 ${dev>0?"+":""}${dev.toFixed(2)}mm / 허용 ±${TOL}</small></div>`;
     return {dev,ok};};
   const diffChk=()=>{
@@ -3112,7 +3225,7 @@ function openCheck(mno,itemId){
     if(pv && pv!==String(it.p??"")) d.push(`피치 표준 ${it.p||"—"} → 실제 ${pv}`);
     if(sv && sv!==String(it.spm??"")) d.push(`SPM 표준 ${it.spm||"—"} → 실제 ${sv}`);
     $("#ckD").innerHTML = d.length
-      ? `<div class="judge n" style="font-size:13px">⚠ 표준과 다름<small>${esc(d.join(" · "))} — 표준값을 바꿔야 하면 저장 후 [수정요청]을 올리세요</small></div>` : "";
+      ? `<div class="judge n" style="font-size:13px"><span>⚠ 표준과 다름</span><small>${esc(d.join(" · "))} — 표준값을 바꿔야 하면 저장 후 [수정요청]을 올리세요</small></div>` : "";
   };
   $("#ckv").addEventListener("input",judge);
   $("#ckp").addEventListener("input",diffChk);
@@ -3131,7 +3244,8 @@ function openCheck(mno,itemId){
     closeModal();
     if(!r.ok) setTimeout(()=>{if(confirm("불합격으로 기록했습니다.\n표준값 자체를 바꿔야 한다면 수정요청을 올리시겠습니까?")) openReq(mno,itemId,"dh",String(v));},100);
   };
-  setTimeout(()=>$("#ckv").focus(),50);
+  kbAttach(["#ckv","#ckp"],false); kbAttach(["#cks"],true);
+  if(!isMob()) setTimeout(()=>$("#ckv").focus(),50);
 }
 function openReq(mno,itemId,preField,preVal){
   const m=mOf(mno),it=itOf(m,itemId); if(!it)return;
@@ -3164,6 +3278,7 @@ function openReq(mno,itemId,preField,preVal){
     return d;
   };
   F.forEach(([k])=>$("#rq_"+k).addEventListener("input",diff));
+  kbAttach(["#rq_dh","#rq_t","#rq_w","#rq_p"],false); kbAttach(["#rq_spm"],true);
   diff();
   $("#rqS").onclick=async()=>{
     const d=diff(), rs=$("#rqr").value.trim();
@@ -3311,7 +3426,8 @@ function openItem(mno,itemId){
     });
     closeModal();
   };
-  setTimeout(()=>$("#itname").focus(),60);
+  kbAttach(["#itdh","#itt","#itw","#itp"],false); kbAttach(["#itspm"],true);
+  if(!isMob()) setTimeout(()=>$("#itname").focus(),60);
 }
 
 /* ═══ 관리자 : 기종 삭제 ═══ */
@@ -3365,6 +3481,7 @@ function openMachine(){
      <div class="tw" style="max-height:44vh"><table><thead><tr><th>호기</th><th>제조사</th>
        <th class="num">톤수</th><th class="num">등록기종</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`,
     `<button onclick="closeModal()">닫기</button>`);
+  kbAttach(["#mno","#mtn"],false);
   $("#mAdd").onclick=async()=>{
     const no=$("#mno").value.trim(), mk=$("#mmk").value.trim(), tn=$("#mtn").value.trim();
     if(!no||!mk||!tn) return alert("호기 · 제조사 · 톤수를 모두 입력하세요.");
