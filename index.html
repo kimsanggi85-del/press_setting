@@ -2446,6 +2446,7 @@ nav .foot{padding:14px 16px;font-size:11.5px;opacity:.78;line-height:1.7}
 .navmask{position:fixed;inset:0;background:rgba(10,16,26,.45);z-index:205}
 
 main{flex:1;min-width:0;padding:16px 16px 56px}
+main>*{max-width:1680px}
 @media(min-width:901px){main{padding:22px 26px 60px}}
 .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .top h2{flex:1;min-width:0}
@@ -2500,7 +2501,7 @@ input.kbi{background:#FFFBF0!important;border-color:var(--amber)!important;curso
 .fl label{font-size:12px;color:var(--muted);white-space:nowrap}
 
 .tw{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:6px;background:#fff}
-table{width:auto;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
 th,td{padding:3px 6px;border-bottom:1px solid var(--line2);text-align:center;white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis}
 td.wrap,th.wrap{white-space:normal;overflow:visible;text-overflow:clip}
@@ -2556,6 +2557,32 @@ td.ecell input.ci:focus{outline:2px solid var(--steel);border-color:var(--steel)
 .cspec{grid-column:1;font-size:12px;color:var(--muted);line-height:1.5}
 .cact{grid-column:1/-1;display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
 @media(max-width:700px){
+  body{font-size:15px}
+  .top h2{font-size:19px}
+  .panel h3{font-size:15px}
+  .cname{font-size:17px}
+  .cdh{font-size:25px}
+  .cdh small{font-size:12px}
+  .cspec{font-size:13.5px;line-height:1.6}
+  .cact button{font-size:14px;padding:9px 13px;font-weight:600}
+  .cact .tag{font-size:12px;padding:2px 8px}
+  .fieldbar .no{font-size:28px}
+  .fieldbar .tx{font-size:12.5px}
+  .fld label{font-size:13px}
+  .fld input,.fld select,.fld textarea{font-size:16px;padding:10px 11px}
+  .info{font-size:13.5px;line-height:1.6}
+  .judge{font-size:16px}
+  .judge small{font-size:13px}
+  .mh b{font-size:16px}
+  .mf button{font-size:15px;padding:10px 16px}
+  .kpi small{font-size:13px}
+  .kpi b{font-size:28px}
+  .kpi em{font-size:12.5px}
+  .nvuser select,.nvuser button{font-size:15px}
+  nav a{font-size:15px;padding:12px 16px}
+  .kb-g button{font-size:21px;padding:15px 0}
+  .kb-hd b{font-size:15px}
+  .kb-hd .v{font-size:19px}
   .qr-hide{display:none!important}          /* QR로 들어온 폰 : 요약카드·조회조건 감춰 표준서가 첫 화면에 */
   .top{margin-bottom:10px}
   main{padding-top:12px}
@@ -2700,6 +2727,9 @@ const ACCOUNTS={
   "2007":{name:"강영태",role:"editor"}
 };
 const ROLET={approver:"승인자",editor:"수정자"};
+/* ── ntfy 알림 (다른 앱과 같은 토픽) ──
+   끄려면 NTFY_ON=false, 토픽을 바꾸려면 NTFY_TOPIC 값만 고치세요. */
+const NTFY_ON=true, NTFY_TOPIC="taejincall";
 const USERS=["강병주","김상기","오현민","강창구","유성환","왕석주","최민호","강영태","허미정","문수진","기타"];
 const SEED={"machines":[{"no":"1","maker":"쌍용","ton":"200","items":[{"id":"M1-01","name":"T1XX","dh":"448.7","mat":"304","t":"0.5","w":"126","p":"120","spm":"20~25"},{"id":"M1-02","name":"48338-2H010","dh":"462.9","mat":"SPCC","t":"1","w":"94","p":"94","spm":"25"},{"id":"M1-03","name":"45631-26010","dh":"459.2","mat":"SPCC","t":"1.4","w":"190","p":"185","spm":"25"},{"id":"M1-04","name":"45524-26210","dh":"463.8","mat":"SPCC","t":"0.8","w":"102","p":"102","spm":"25"},{"id":"M1-05","name":"45624-2F010(LOWER)","dh":"464.4","mat":"SPCC","t":"1.6","w":"160","p":"129","spm":"25"},{"id":"M1-06","name":"45624-2F010(UPPER)","dh":"463.6","mat":"SPCC","t":"1","w":"160","p":"128","spm":"25"},{"id":"M1-07","name":"1781-0001-01","dh":"409.4","mat":"SPCC","t":"0.6","w":"110","p":"101","spm":"30~35"},{"id":"M1-08","name":"1979-0051-01","dh":"399.1","mat":"SPCC","t":"0.8","w":"120","p":"110","spm":"30~35"},{"id":"M1-09","name":"1888-0005","dh":"408.2","mat":"304 J1","t":"0.5","w":"126","p":"118","spm":"20~25"},{"id":"M1-10","name":"1976-0004-01","dh":"398.8","mat":"SPCC","t":"0.6","w":"102","p":"92","spm":"30~35"},{"id":"M1-11","name":"1969-0030-01","dh":"419.9","mat":"SPCC","t":"0.6","w":"102","p":"92","spm":"30~35"},{"id":"M1-12","name":"1946-00053-01","dh":"418.9","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"30~35"}]},{"no":"2","maker":"심팩","ton":"200","items":[{"id":"M2-01","name":"45524-26210","dh":"466.5","mat":"SPCC","t":"0.8","w":"102","p":"102","spm":"25"},{"id":"M2-02","name":"48338-2H010","dh":"465.7","mat":"SPCC","t":"1","w":"94","p":"94","spm":"25"},{"id":"M2-03","name":"45624-2F010 (LOWER)","dh":"467.3","mat":"SPCC","t":"1.6","w":"160","p":"129","spm":"25"},{"id":"M2-04","name":"45624-2F010     (UPPER)","dh":"466.5","mat":"SPCC","t":"1","w":"126","p":"128","spm":"25"},{"id":"M2-05","name":"45631-26010              (SEMI-PRO)","dh":"464.7","mat":"SPCC","t":"1.4","w":"190","p":"185","spm":"25"},{"id":"M2-06","name":"45631-26010","dh":"460.9","mat":"SPCC","t":"1.4","w":"190","p":"185","spm":"25"}]},{"no":"3","maker":"심팩","ton":"150","items":[{"id":"M3-01","name":"1968-0016-02","dh":"386","mat":"430-2B","t":"0.6","w":"90","p":"88","spm":"35~40"},{"id":"M3-02","name":"1945-349-02","dh":"35901","mat":"430-2B","t":"0.6","w":"62","p":"60","spm":"50~55"},{"id":"M3-03","name":"1515-196","dh":"376.4","mat":"SPCC","t":"0.9","w":"64","p":"55","spm":"45~50"}]},{"no":"4","maker":"심팩","ton":"150","items":[{"id":"M4-01","name":"1958-365-1","dh":"372.7","mat":"SPCC","t":"0.6","w":"74","p":"72","spm":"35~40"},{"id":"M4-02","name":"1967-392","dh":"375.4","mat":"SPCC","t":"0.6","w":"84","p":"80","spm":"35~40"},{"id":"M4-03","name":"1952-346-2","dh":"355.5","mat":"430-BA","t":"0.6","w":"66","p":"66","spm":"25~30"},{"id":"M4-04","name":"1853-586","dh":"385.2","mat":"304-BA","t":"0.5","w":"73","p":"72","spm":"35~40"},{"id":"M4-05","name":"1856-627-2","dh":"358.7","mat":"430-BA","t":"0.6","w":"72","p":"70","spm":"25~30"},{"id":"M4-06","name":"1968-364-1","dh":"357","mat":"SPCC","t":"0.6","w":"86","p":"84","spm":"35~40"},{"id":"M4-07","name":"1861-597","dh":"348.4","mat":"430-BA","t":"0.6","w":"80","p":"78","spm":"35~40"},{"id":"M4-08","name":"1945-349-2","dh":"359","mat":"430-BA","t":"0.6","w":"62","p":"60","spm":"25~30"},{"id":"M4-09","name":"1862-0041-21","dh":"387.4","mat":"430-BA","t":"0.6","w":"80","p":"78","spm":"25~30"},{"id":"M4-10","name":"1960-0031-21","dh":"387.5","mat":"430-BA","t":"0.6","w":"80","p":"77.9","spm":"25~30"},{"id":"M4-11","name":"1862-0042-21","dh":"387.2","mat":"SUS430","t":"0.6","w":"80","p":"78","spm":"20~25"}]},{"no":"5","maker":"심팩","ton":"110","items":[{"id":"M5-01","name":"1853-515-1","dh":"364.8","mat":"SPCC","t":"0.8","w":"80","p":"78","spm":"35~40"},{"id":"M5-02","name":"1965-326-1","dh":"298.3","mat":"SPCC","t":"0.8","w":"100","p":"90","spm":"35~40"},{"id":"M5-03","name":"1553-101-1","dh":"341.3","mat":"SPCC","t":"0.8","w":"80","p":"76","spm":"35~40"},{"id":"M5-04","name":"1807-653","dh":"299.6","mat":"SPCC","t":"0.6","w":"114","p":"28","spm":"20~25"},{"id":"M5-05","name":"1947-353","dh":"303.8","mat":"SPCC","t":"0.6","w":"74","p":"72","spm":"35~40"},{"id":"M5-06","name":"1755-296","dh":"273.2","mat":"SPCC","t":"0.5","w":"72","p":"69.5","spm":"30~35"},{"id":"M5-07","name":"1982-371","dh":"294.7","mat":"SPCC","t":"0.8","w":"108","p":"107.5","spm":"25"}]},{"no":"6","maker":"심팩","ton":"110","items":[{"id":"M6-01","name":"1853-515-1","dh":"365","mat":"SPCC","t":"0.8","w":"80","p":"78","spm":"20~25"},{"id":"M6-02","name":"1945-349-1","dh":"301.3","mat":"SPCC","t":"0.6","w":"68","p":"66","spm":"35~40"},{"id":"M6-03","name":"1982-371","dh":"293.9","mat":"SPCC","t":"0.8","w":"108","p":"107.5","spm":"25~30"},{"id":"M6-04","name":"1970-363","dh":"312.6","mat":"SPCC","t":"0.6","w":"94","p":"93.5","spm":"35~40"},{"id":"M6-05","name":"1970-372-1","dh":"312.3","mat":"SPCC","t":"0.8","w":"94","p":"93.5","spm":"35~40"},{"id":"M6-06","name":"1862-651-01","dh":"349.6","mat":"SPCC","t":"0.6","w":"90","p":"85.5","spm":"30~35"}]},{"no":"11","maker":"심팩","ton":"80","items":[{"id":"M11-01","name":"1547-102-1","dh":"315.7","mat":"SPCC","t":"0.6","w":"70","p":"68","spm":"25~30"}]},{"no":"28","maker":"국일","ton":"200","items":[{"id":"M28-01","name":"1515-196","dh":"379","mat":"SPCC","t":"0.9","w":"64","p":"55","spm":"35~40"}]},{"no":"29","maker":"국일","ton":"200","items":[{"id":"M29-01","name":"1515-196","dh":"378.5","mat":"SPCC","t":"0.9","w":"64","p":"55","spm":"35~40"},{"id":"M29-02","name":"45631-26010","dh":"460.5","mat":"","t":"","w":"","p":"","spm":""}]},{"no":"30","maker":"국일","ton":"160","items":[{"id":"M30-01","name":"1951-386","dh":"417.5","mat":"SPCC","t":"0.6","w":"76","p":"66","spm":"30~35"}]},{"no":"31","maker":"심팩","ton":"150","items":[{"id":"M31-01","name":"1858-619","dh":"335.2","mat":"430-BA","t":"0.6","w":"88","p":"74","spm":"35~40"},{"id":"M31-02","name":"1952-0052-21","dh":"392.1","mat":"430-2B","t":"0.6","w":"70","p":"68","spm":"25~30"},{"id":"M31-03","name":"1963-0055-02","dh":"387.2","mat":"430-2B","t":"0.6","w":"84","p":"82","spm":"25~30"},{"id":"M31-04","name":"1960-0031-21","dh":"387.9","mat":"430-2B","t":"0.6","w":"80","p":"78","spm":"25~30"},{"id":"M31-05","name":"1862-651","dh":"348.6","mat":"SPCC","t":"0.6","w":"90","p":"86","spm":"25~30"},{"id":"M31-06","name":"1952-0056-21","dh":"392.6","mat":"430","t":"0.6","w":"70","p":"68","spm":"20~30"},{"id":"M31-07","name":"※단발작업시 피더기 릴리징 5로 작업","dh":"","mat":"","t":"","w":"","p":"","spm":""}]},{"no":"32","maker":"심팩","ton":"200","items":[{"id":"M32-01","name":"1861-596","dh":"400.4","mat":"SPCC","t":"0.6","w":"94","p":"92","spm":"35~40"},{"id":"M32-02","name":"1951-386","dh":"418.6","mat":"SPCC","t":"0.6","w":"76","p":"66","spm":"35~40"},{"id":"M32-03","name":"1967-391","dh":"408.5","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"35~40"}]},{"no":"33","maker":"심팩","ton":"250","items":[{"id":"M33-01","name":"1973-325","dh":"383.8","mat":"SPCC","t":"0.6","w":"125","p":"107","spm":"30~35"},{"id":"M33-02","name":"1972-383","dh":"409.5","mat":"SPCC","t":"0.6","w":"114","p":"104","spm":"30~35"},{"id":"M33-03","name":"1967-391","dh":"407.8","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"30~35"},{"id":"M33-04","name":"1781-0001-00","dh":"408","mat":"SPCC","t":"0.6","w":"110","p":"102","spm":"30~35"},{"id":"M33-05","name":"1959-0024-01","dh":"428.5","mat":"SPCC","t":"0.6","w":"86","p":"84","spm":"25~30"},{"id":"M33-06","name":"1974-0023-01","dh":"399.3","mat":"SPCC","t":"0.6","w":"100","p":"98","spm":"25~30"},{"id":"M33-07","name":"1963-0055-01","dh":"397.6","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M33-08","name":"1962-0030","dh":"387.5","mat":"SPCC","t":"0.6","w":"94","p":"84","spm":"30~35"},{"id":"M33-09","name":"1946-0053-01","dh":"418","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"30~35"},{"id":"M33-10","name":"1960-0031-01","dh":"418","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M33-11","name":"1969-0030-01","dh":"418.7","mat":"SPCC","t":"0.6","w":"102","p":"93","spm":"30~35"},{"id":"M33-12","name":"1862-0041(0042)-01","dh":"417.3","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M33-13","name":"1968-0016-01","dh":"398","mat":"SPCC","t":"0.6","w":"92","p":"90","spm":"30~35"},{"id":"M33-14","name":"MAG624828","dh":"474.2","mat":"SPCC","t":"2.3","w":"46","p":"46","spm":"35~40"}]},{"no":"34","maker":"심팩","ton":"250","items":[{"id":"M34-01","name":"1967-391","dh":"406.2","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"35~40"},{"id":"M34-02","name":"1973-325","dh":"381.9","mat":"SPCC","t":"0.6","w":"125","p":"107","spm":"30~35"},{"id":"M34-03","name":"1968-0016-01","dh":"396.6","mat":"SPCC","t":"0.6","w":"92","p":"90","spm":"25~30"},{"id":"M34-04","name":"1962-0030","dh":"387.5","mat":"SPCC","t":"0.6","w":"94","p":"84","spm":"30~35"},{"id":"M34-05","name":"1871-0043-01","dh":"398.8","mat":"SPCC","t":"0.6","w":"100","p":"98","spm":"25~30"},{"id":"M34-06","name":"1873-0045-01","dh":"400.4","mat":"SPCC","t":"0.8","w":"120","p":"110","spm":"25~30"},{"id":"M34-07","name":"1888-0005","dh":"406.5","mat":"304","t":"0.5","w":"126","p":"117","spm":"20~25"},{"id":"M34-08","name":"1979-0051-01","dh":"397.8","mat":"SPCC","t":"0.8","w":"120","p":"110","spm":"30~35"},{"id":"M34-09","name":"1946-0053-01","dh":"417.6","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"30~35"},{"id":"M34-10","name":"1969-0030-01","dh":"418","mat":"SPCC","t":"0.6","w":"102","p":"92","spm":"30~35"},{"id":"M34-11","name":"1976-0004-01","dh":"397.8","mat":"SPCC","t":"0.6","w":"102","p":"90","spm":"30~35"},{"id":"M34-12","name":"1974-0023-01","dh":"399.1","mat":"SPCC","t":"0.6","w":"100","p":"98","spm":"30~35"},{"id":"M34-13","name":"1781-0001-01","dh":"407.6","mat":"SPCC","t":"0.6","w":"110","p":"102","spm":"35~40"},{"id":"M34-14","name":"1862-0041-01","dh":"417","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M34-15","name":"1960-0031-01","dh":"417.6","mat":"SPCC","t":"0.6","w":"90","p":"87.8","spm":"30~35"}]},{"no":"35","maker":"심팩","ton":"250","items":[{"id":"M35-01","name":"1960-0031-01","dh":"417.3","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M35-02","name":"1969-0030-01","dh":"419.2","mat":"SPCC","t":"0.6","w":"102","p":"93","spm":"30~35"},{"id":"M35-03","name":"1862-0041-01","dh":"417.6","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M35-04","name":"1979-0051-01","dh":"398","mat":"SPCC","t":"0.8","w":"120","p":"109","spm":"30~35"},{"id":"M35-05","name":"1962-0030","dh":"388.1","mat":"SPCC","t":"0.6","w":"94","p":"84","spm":"35~40"},{"id":"M35-06","name":"1946-0053-01","dh":"418.3","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"35~40"}]},{"no":"36","maker":"심팩","ton":"300","items":[{"id":"M36-01","name":"Race way   1106","dh":"497.7","mat":"S55CM","t":"1.01","w":"125","p":"116","spm":"35~40"},{"id":"M36-02","name":"Race way   1165","dh":"487.6","mat":"S55CM","t":"1.01","w":"134","p":"124","spm":"35~40"},{"id":"M36-03","name":"Race way   1113","dh":"488.6","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M36-04","name":"Race way   1179","dh":"488.1","mat":"C67SCM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M36-05","name":"Race way   1113-2","dh":"496.7","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M36-06","name":"AB-3248-SC-01\n(9BUX)","dh":"489.5","mat":"3042B","t":"0.5","w":"118","p":"108","spm":"22~24"},{"id":"M36-07","name":"Race way   1106-2","dh":"494","mat":"S55CM","t":"1.01","w":"125","p":"116","spm":"35~40"}]},{"no":"37","maker":"국일","ton":"200","items":[{"id":"M37-01","name":"1853-515-1","dh":"403","mat":"SPCC","t":"0.8","w":"80","p":"78","spm":"30~35"},{"id":"M37-02","name":"1853-515-2","dh":"368.5","mat":"304-2B","t":"0.5","w":"75","p":"75","spm":"30~35"},{"id":"M37-03","name":"1869-621","dh":"372.2","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M37-04","name":"1958-365-2(신형)","dh":"448.6","mat":"304-2B","t":"0.6","w":"80","p":"78","spm":"25~30"},{"id":"M37-05","name":"1968-364-1","dh":"359.3","mat":"SPCC","t":"0.6","w":"74","p":"72","spm":"30~35"},{"id":"M37-06","name":"1968-364-2(신형)","dh":"448.5","mat":"304-2B","t":"0.6","w":"93","p":"91","spm":"25~30"},{"id":"M37-07","name":"1974-0023-21","dh":"931.1","mat":"430-2B","t":"0.6","w":"94","p":"92","spm":"24~28"},{"id":"M37-08","name":"1862-651","dh":"373.2","mat":"SPCC","t":"0.6","w":"90","p":"86","spm":"30~35"},{"id":"M37-09","name":"1963-0055-01","dh":"398.5","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"25~30"},{"id":"M37-10","name":"1967-391","dh":"407.7","mat":"SPCC","t":"0.6","w":"112","p":"104","spm":"30~35"},{"id":"M37-11","name":"1861-596","dh":"400.3","mat":"SPCC","t":"0.6","w":"94","p":"92","spm":"30~35"},{"id":"M37-12","name":"1551-189","dh":"408","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M37-13","name":"1969-0030-01","dh":"419.8","mat":"SPCC","t":"0.6","w":"102","p":"93","spm":"30~35"},{"id":"M37-14","name":"1862-0041-01","dh":"417.8","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~32"},{"id":"M37-15","name":"1657-127","dh":"448","mat":"SPCC","t":"1.2","w":"90","p":"85","spm":"30~35"},{"id":"M37-16","name":"1781-0001-00","dh":"407.8","mat":"SPCC","t":"0.6","w":"110","p":"102","spm":"30~35"},{"id":"M37-17","name":"1952-367-2","dh":"460.1","mat":"304-2B","t":"0.6","w":"74","p":"72","spm":"25~30"}]},{"no":"38","maker":"국일","ton":"250","items":[{"id":"M38-01","name":"1972-383","dh":"461.6","mat":"SPCC","t":"0.6","w":"114","p":"104","spm":"30~35"},{"id":"M38-02","name":"1952-0056-01","dh":"456.8","mat":"SPCC","t":"0.6","w":"76","p":"74","spm":"25~30"}]},{"no":"39","maker":"국일","ton":"250","items":[{"id":"M39-01","name":"MJH637370","dh":"474","mat":"304-2B","t":"0.8","w":"64","p":"58","spm":"25~30"},{"id":"M39-02","name":"MAG624828","dh":"472","mat":"SPCC","t":"2.3","w":"46","p":"40","spm":"35~40"},{"id":"M39-03","name":"1862-0041-01","dh":"496","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"},{"id":"M39-04","name":"1968-364-2","dh":"467","mat":"304-2B","t":"0.6","w":"93","p":"93","spm":"30~35"},{"id":"M39-05","name":"1960-0031-01","dh":"468.4","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"30~35"}]},{"no":"40","maker":"심팩","ton":"200","items":[{"id":"M40-01","name":"1551-189","dh":"405.3","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"35~40"},{"id":"M40-02","name":"1959-0024-21","dh":"397.1","mat":"430-2B","t":"0.6","w":"82","p":"80","spm":"35~40"},{"id":"M40-03","name":"1657-127","dh":"446","mat":"SPCC","t":"1.2","w":"90","p":"85","spm":"35~40"},{"id":"M40-04","name":"1873-622-2","dh":"375.6","mat":"430-BA","t":"0.6","w":"92","p":"90","spm":"35~40"},{"id":"M40-05","name":"1974-0023-21","dh":"388.8","mat":"430-2B","t":"0.6","w":"94","p":"92","spm":"24~28"},{"id":"M40-06","name":"1976-04-01 00:00:00","dh":"396.4","mat":"SPCC","t":"0.6","w":"102","p":"90","spm":"35~40"},{"id":"M40-07","name":"1970-372-2","dh":"410.5","mat":"430-BA","t":"0.6","w":"86","p":"84","spm":"35~40"},{"id":"M40-08","name":"1965-326-2","dh":"413.8","mat":"430-BA","t":"0.6","w":"90","p":"87","spm":"35~40"},{"id":"M40-09","name":"1967-392","dh":"375.8","mat":"SPCC","t":"0.6","w":"84","p":"80","spm":"35~40"},{"id":"M40-10","name":"1660-131","dh":"378.3","mat":"430-BA","t":"0.6","w":"78","p":"76","spm":"35~40"},{"id":"M40-11","name":"1973-325","dh":"381.6","mat":"SPCC","t":"0.6","w":"125","p":"107","spm":"35~40"},{"id":"M40-12","name":"1869-621","dh":"369","mat":"SPCC","t":"0.6","w":"90","p":"88","spm":"35~40"},{"id":"M40-13","name":"1862-0042-21","dh":"387.2","mat":"430-2B","t":"0.6","w":"80","p":"78","spm":"20~25"},{"id":"M40-14","name":"1968-364","dh":"357","mat":"SPCC","t":"0.6","w":"86","p":"84","spm":"30~35"},{"id":"M40-15","name":"1862-0041-21","dh":"387.4","mat":"430-2B","t":"0.6","w":"80","p":"78","spm":"20~25"}]},{"no":"41","maker":"국일","ton":"200","items":[{"id":"M41-01","name":"1657-130-2","dh":"389","mat":"430-BA","t":"0.8","w":"78","p":"76","spm":"30~35"},{"id":"M41-02","name":"1952-367-2(신형)","dh":"460.5","mat":"304-2B","t":"0.6","w":"74","p":"72","spm":"30~35"},{"id":"M41-03","name":"1861-596","dh":"400.5","mat":"SPCC","t":"0.6","w":"94","p":"92","spm":"35~40"},{"id":"M41-04","name":"1837-0033-01","dh":"409.6","mat":"SPCC","t":"1","w":"70","p":"68","spm":"30~35"},{"id":"M41-05","name":"1952-0056-01","dh":"402.1","mat":"SPCC","t":"0.6","w":"76","p":"74","spm":"25~30"},{"id":"M41-06","name":"1946-0053-01","dh":"389","mat":"SPCC","t":"0.6","w":"92","p":"82","spm":"35~40"},{"id":"M41-07","name":"1972-383","dh":"412.1","mat":"SPCC","t":"0.6","w":"114","p":"104","spm":"35~40"}]},{"no":"42","maker":"AIDA","ton":"200","items":[{"id":"M42-01","name":"1952-367-2","dh":"380.25","mat":"304-2B","t":"0.6","w":"76","p":"74","spm":"50"},{"id":"M42-02","name":"1752-293-2","dh":"367.7","mat":"430-2B","t":"0.5","w":"74","p":"70","spm":"50"}]},{"no":"43","maker":"국일","ton":"800","items":[{"id":"M43-01","name":"54610-C1000 (JF)","dh":"689.7","mat":"SPFH590","t":"3.2","w":"284","p":"자동","spm":"18~22"},{"id":"M43-02","name":"54610-D3500 (SV)","dh":"677.2","mat":"SPFH590","t":"3.6","w":"283","p":"자동","spm":"18~22"},{"id":"M43-03","name":"54610-D3000 (TL)","dh":"684.3","mat":"PHT590F","t":"3.6","w":"284.5","p":"자동","spm":"16~18"},{"id":"M43-04","name":"B171000-0013-00(MQ4)","dh":"678","mat":"SPFH590-P","t":"3.2","w":"사급","p":"자동","spm":"18~22"},{"id":"M43-05","name":"(UMA)","dh":"","mat":"","t":"","w":"329.5","p":"자동","spm":"16~18"}]},{"no":"45","maker":"심팩","ton":"300","items":[{"id":"M45-01","name":"Race way   1106","dh":"492.6","mat":"S55CM","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M45-02","name":"Race way   1113","dh":"487.3","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M45-03","name":"Race way   1179","dh":"488.2","mat":"C67SCM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M45-04","name":"Race way   1156","dh":"488.3","mat":"C67SCM","t":"1.25","w":"146","p":"136","spm":"35~40"},{"id":"M45-05","name":"Race way   1159","dh":"488","mat":"C55CM","t":"1.01","w":"144","p":"134","spm":"35~40"},{"id":"M45-06","name":"Race way   1113-2","dh":"495.7","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"}]},{"no":"46","maker":"심팩","ton":"300","items":[{"id":"M46-01","name":"Race way   1113D","dh":"491.2","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M46-02","name":"AB3248-SC-01\n(9BUX)","dh":"487.6","mat":"304-2B","t":"0.5","w":"118","p":"107.5","spm":"22~24"},{"id":"M46-03","name":"Race way   1113-2","dh":"494.4","mat":"S70C","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M46-04","name":"Race way   1179-2","dh":"488.1","mat":"C67CM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M46-05","name":"Race way   1159","dh":"487.4","mat":"S55CM-S","t":"1.01","w":"141","p":"134","spm":"35~40"},{"id":"M46-06","name":"Race way   1156","dh":"486.1","mat":"C67S","t":"1.25","w":"143","p":"136","spm":"35~40"},{"id":"M46-07","name":"Race way   1106","dh":"495.5","mat":"S55C","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M46-08","name":"Race way   1179","dh":"487","mat":"C67S","t":"1.25","w":"137","p":"130","spm":"38~40"},{"id":"M46-09","name":"Race way   1165","dh":"487.5","mat":"S55C","t":"1.01","w":"134","p":"124","spm":"35~40"},{"id":"M46-10","name":"T1 XX","dh":"497","mat":"304-2B","t":"0.5","w":"126","p":"120","spm":"20~25"},{"id":"M46-11","name":"Race way   1113-1","dh":"495.5","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"}]},{"no":"47","maker":"심팩","ton":"300","items":[{"id":"M47-01","name":"Race way   1106","dh":"496.4","mat":"S55CM","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M47-02","name":"Race way   1113","dh":"495.5","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M47-03","name":"Race way   1179","dh":"487.9","mat":"C67SCM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M47-04","name":"Race way   1165","dh":"488.8","mat":"S55CM","t":"1.01","w":"126","p":"124","spm":"35~40"},{"id":"M47-05","name":"Race way   1159","dh":"487.6","mat":"S55CM","t":"1.01","w":"144","p":"134","spm":"35~40"},{"id":"M47-06","name":"Race way   1113-2","dh":"495.2","mat":"S70CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M47-07","name":"Race way   1113D","dh":"491.9","mat":"C67S","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M47-08","name":"Race way   1156","dh":"486.9","mat":"C67S","t":"1.25","w":"143","p":"136","spm":"35~40"}]},{"no":"48","maker":"심팩","ton":"300","items":[{"id":"M48-01","name":"Race way   1113","dh":"489.3","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M48-02","name":"Race way   1165","dh":"491.5","mat":"S55CM","t":"1.01","w":"134","p":"124","spm":"35~40"},{"id":"M48-03","name":"Race way   1159B","dh":"490.8","mat":"S55CM","t":"1.01","w":"144","p":"134","spm":"35~40"},{"id":"M48-04","name":"Race way   1106","dh":"498.7","mat":"S55CM","t":"101","w":"126","p":"116","spm":"35~40"},{"id":"M48-05","name":"Race way   1113-2","dh":"497.6","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"},{"id":"M48-06","name":"Race way   1156","dh":"490.1","mat":"C67CM","t":"1.25","w":"146","p":"136","spm":"35~40"},{"id":"M48-07","name":"Race way   1179-2","dh":"491.4","mat":"C67CM","t":"1.25","w":"137","p":"130","spm":"35~40"},{"id":"M48-08","name":"Race way   1106-2","dh":"494.5","mat":"S55CM","t":"1.01","w":"126","p":"116","spm":"35~40"},{"id":"M48-09","name":"Race way   1113D","dh":"494.4","mat":"C67CM","t":"1.25","w":"132","p":"124","spm":"35~40"}]},{"no":"49","maker":"심팩","ton":"300","items":[{"id":"M49-01","name":"Race way   1179-3","dh":"490.5","mat":"C67S","t":"1.25","w":"248","p":"67~68","spm":"34"}]}]};
 const FIELDS={dh:"다이하이트",mat:"재질",t:"두께T",w:"폭W",p:"피치P",spm:"최대SPM"};
@@ -2712,7 +2742,8 @@ const GRP={std:"a",search:"a",req:"b",check:"b",hist:"b",qr:"c"};
 /* ═══════════ 상태 ═══════════ */
 let S=null,view="std",cur=null,auth=null,me="",qrMode=false,selId="";
 const isAdmin  = ()=> !!auth && auth.role==="approver";   /* 승인 권한 */
-const canEdit  = ()=> !!auth;                              /* 표준 수정 권한 */
+const canEdit  = ()=> !!auth;
+const uname    = ()=> (auth&&auth.name)||me||"";                              /* 표준 수정 권한 */
 let fq={pn:"",mat:"",chk:""}, sq="";
 let editMode=false, edits={};          /* 표 셀 직접 편집 */
 const EDF=[["name","기종명"],["dh","다이하이트"],["mat","재질"],["t","두께T"],["w","폭W"],["p","피치P"],["spm","최대SPM"]];
@@ -2924,9 +2955,9 @@ function vStd(){
         <span class="tag a">공차 ±${TOL}mm</span>
         ${pend?`<span class="tag r">승인대기 ${pend}</span>`:""}</h3>
       <div class="tw">
-        <table><colgroup><col style="width:38px"><col style="width:186px"><col style="width:80px"><col style="width:74px">
-          <col style="width:54px"><col style="width:54px"><col style="width:54px"><col style="width:72px">
-          <col style="width:92px"><col class="noprint" style="width:214px"></colgroup>
+        <table><colgroup><col style="width:3.6%"><col style="width:20%"><col style="width:8.4%"><col style="width:8%">
+          <col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:7.6%">
+          <col style="width:9.4%"><col class="noprint" style="width:25%"></colgroup>
         <thead><tr><th>No</th><th>기종명(품번)</th><th>다이하이트</th><th>재질</th>
           <th>두께T</th><th>폭W</th><th>피치P</th><th>최대SPM</th>
           <th>최근점검</th><th class="noprint">작업</th></tr></thead>
@@ -2993,9 +3024,9 @@ function vSearch(){
     <div class="panel">
       <h3>조회 결과 <span class="tag">${hits.length}건</span>
         ${hits.length?`<span class="tag a">설비 ${new Set(hits.map(h=>h.m.no)).size}대</span>`:""}</h3>
-      <div class="tw"><table><colgroup><col style="width:54px"><col style="width:100px"><col style="width:186px">
-        <col style="width:80px"><col style="width:74px"><col style="width:54px"><col style="width:54px">
-        <col style="width:54px"><col style="width:72px"><col class="noprint" style="width:76px"></colgroup>
+      <div class="tw"><table><colgroup><col style="width:5.4%"><col style="width:10%"><col style="width:19%">
+        <col style="width:8.4%"><col style="width:8%"><col style="width:6%"><col style="width:6%">
+        <col style="width:6%"><col style="width:7.6%"><col class="noprint" style="width:8%"></colgroup>
         <thead><tr><th>호기</th><th>설비</th><th>기종명(품번)</th><th>다이하이트</th>
         <th>재질</th><th>두께T</th><th>폭W</th><th>피치P</th>
         <th>최대SPM</th><th class="noprint">이동</th></tr></thead>
@@ -3033,9 +3064,9 @@ function vReq(){
       ${isAdmin()?`<span class="tag g">${esc(auth.name)} · 승인자 — 승인 가능</span>`
         :auth?`<span class="tag a">${esc(auth.name)} · 수정자 — 승인 불가 (승인자 PIN 필요)</span>`
              :'<span class="tag d">조회 권한 — 승인하려면 승인자 PIN 로그인</span>'}</h3>
-      <div class="tw"><table><colgroup><col style="width:116px"><col style="width:58px"><col style="width:150px">
-        <col style="width:216px"><col style="width:210px"><col style="width:66px"><col style="width:58px">
-        <col class="noprint" style="width:106px"></colgroup>
+      <div class="tw"><table><colgroup><col style="width:11.5%"><col style="width:5.6%"><col style="width:14.5%">
+        <col style="width:21%"><col style="width:21%"><col style="width:6.6%"><col style="width:5.8%">
+        <col class="noprint" style="width:10.5%"></colgroup>
         <thead><tr><th>요청일시</th><th>설비</th><th>기종명</th><th>변경 내용</th>
         <th>변경사유</th><th>요청자</th><th>상태</th><th class="noprint">처리</th></tr></thead>
         <tbody>${tr||`<tr><td colspan="8" class="empty">등록된 수정요청이 없습니다.</td></tr>`}</tbody></table></div>
@@ -3064,9 +3095,9 @@ function vCheck(){
     </div>
     ${bar("금형 교체 후 실측 다이하이트 기록 — 초물검사 · 4M 변경 근거자료")}
     <div class="panel"><h3>세팅 점검기록</h3>
-      <div class="tw"><table><colgroup><col style="width:116px"><col style="width:58px"><col style="width:152px">
-        <col style="width:70px"><col style="width:70px"><col style="width:58px"><col style="width:60px">
-        <col style="width:86px"><col style="width:86px"><col style="width:66px"><col style="width:180px"></colgroup>
+      <div class="tw"><table><colgroup><col style="width:11.5%"><col style="width:5.6%"><col style="width:15%">
+        <col style="width:7%"><col style="width:7%"><col style="width:5.8%"><col style="width:6%">
+        <col style="width:8.6%"><col style="width:8.6%"><col style="width:6.6%"><col style="width:17%"></colgroup>
         <thead><tr><th>점검일시</th><th>설비</th><th>기종명</th><th>표준값</th>
         <th>실측값</th><th>편차</th><th>판정</th>
         <th>실제피치</th><th>실제SPM</th><th>점검자</th><th>비고</th></tr></thead>
@@ -3090,9 +3121,9 @@ function vHist(){
     ${bar("승인되어 반영된 변경 내역 — 문서 개정 근거")}
     <div class="panel"><h3>개정이력 <span class="tag">${list.length}건</span>
       <span class="tag a">현재 ${revNo(S.rev)}</span></h3>
-      <div class="tw"><table><colgroup><col style="width:60px"><col style="width:116px"><col style="width:58px">
-        <col style="width:58px"><col style="width:150px"><col style="width:76px"><col style="width:96px">
-        <col style="width:96px"><col style="width:200px"><col style="width:66px"><col style="width:66px"></colgroup>
+      <div class="tw"><table><colgroup><col style="width:5.8%"><col style="width:11%"><col style="width:5.6%">
+        <col style="width:5.6%"><col style="width:14%"><col style="width:7.2%"><col style="width:9%">
+        <col style="width:9%"><col style="width:19.8%"><col style="width:6.5%"><col style="width:6.5%"></colgroup>
         <thead><tr><th>개정</th><th>반영일시</th><th>구분</th><th>설비</th><th>기종명</th><th>항목</th>
         <th>변경전</th><th>변경후</th><th>변경사유</th><th>요청자</th><th>처리자</th></tr></thead>
         <tbody>${tr||`<tr><td colspan="11" class="empty">개정 이력이 없습니다 — 최초 제정본(Rev.01) 상태입니다.</td></tr>`}</tbody></table></div>
@@ -3130,6 +3161,19 @@ function vQr(){
 }
 
 
+
+/* ═══ ntfy 알림 ═══ */
+async function ntfyPush(title,message,tags,prio,clickUrl){
+  if(!NTFY_ON||!NTFY_TOPIC) return false;
+  try{
+    const body={topic:NTFY_TOPIC,title,message,tags:tags||["bell"],priority:prio||3};
+    if(clickUrl) body.click=clickUrl;
+    const r=await fetch("https://ntfy.sh/",{method:"POST",body:JSON.stringify(body)});
+    return r.ok;
+  }catch(e){ return false; }
+}
+const appUrl = m => location.origin+location.pathname+(m?("?m="+encodeURIComponent(m)):"");
+
 /* ═══ 모바일 숫자 키패드 ═══
    휴대폰 기본 키보드가 입력칸을 가리거나 숫자 입력이 불편해 앱 내장 패드를 씁니다.
    대상 칸은 readonly로 두고 탭하면 패드가 열립니다(삼성 키보드가 inputmode=none을 무시함). */
@@ -3144,33 +3188,49 @@ function kbAttach(sels, tilde){
     if(el.tagName==="INPUT" && el.type==="number") el.type="text";
     el.readOnly=true; el.classList.add("kbi");
     el.dataset.kbTilde = tilde?"1":"0";
-    el.addEventListener("click",()=>kbOpen(el));
-    el.addEventListener("focus",()=>kbOpen(el));
+    el.setAttribute("inputmode","none");
   });
 }
+/* 열기·닫기는 위임 리스너 한 곳에서 처리 (모달을 다시 그려도 유실되지 않음) */
+document.addEventListener("click", e=>{
+  const el = e.target.closest("input.kbi");
+  if(el){ if(isMob()) kbOpen(el); return; }
+  if($("#kb") && !e.target.closest("#kb")){
+    if(kbT) kbT.dispatchEvent(new Event("change",{bubbles:true}));
+    kbClose();
+  }
+}, true);
 function kbOpen(el){
+  if(kbT===el && $("#kb")) return;
   kbT=el; kbAllowTilde = el.dataset.kbTilde==="1";
-  const lab = (el.closest(".fld")?.querySelector("label")?.textContent||"").replace(/\s+/g," ").trim()
-            || (el.dataset.k?(FIELDS[el.dataset.k]||el.dataset.k):"값 입력");
+  const lab = (el.closest(".fld")&&el.closest(".fld").querySelector("label")
+                ? el.closest(".fld").querySelector("label").textContent : "")
+              .replace(/\s+/g," ").trim()
+            || (el.dataset.k ? (FIELDS[el.dataset.k]||el.dataset.k) : "값 입력");
   let k=$("#kb");
-  if(!k){ k=document.createElement("div"); k.id="kb"; k.className="kb"; document.body.appendChild(k);
-          const pad=document.createElement("div"); pad.className="kbpad"; document.body.appendChild(pad); }
-  k.innerHTML = `<div class="kb-hd"><b>${esc(lab.split("(")[0].trim())}</b>
+  if(!k){ k=document.createElement("div"); k.id="kb"; k.className="kb"; document.body.appendChild(k); }
+  if(!document.querySelector(".kbpad")){
+    const pad=document.createElement("div"); pad.className="kbpad"; document.body.appendChild(pad); }
+  k.innerHTML = `<div class="kb-hd"><b>${esc(lab.split("(")[0].replace("*","").trim())}</b>
       <span class="v" id="kbV">${esc(el.value||"—")}</span></div>
     <div class="kb-g">
-      <button data-kb="7">7</button><button data-kb="8">8</button><button data-kb="9">9</button>
-      <button class="fn del" data-kb="bs">← 지움</button>
-      <button data-kb="4">4</button><button data-kb="5">5</button><button data-kb="6">6</button>
-      ${kbAllowTilde?`<button class="fn" data-kb="~">~</button>`:`<button class="fn" data-kb="clr">전체<br>삭제</button>`}
-      <button data-kb="1">1</button><button data-kb="2">2</button><button data-kb="3">3</button>
-      <button class="fn" data-kb=".">.</button>
-      <button data-kb="0">0</button><button data-kb="00">00</button>
-      ${kbAllowTilde?`<button class="fn" data-kb="clr">전체<br>삭제</button>`:`<button class="fn" data-kb="-">-</button>`}
-      <button class="ok" data-kb="ok">확인</button>
+      <button type="button" data-kb="7">7</button><button type="button" data-kb="8">8</button>
+      <button type="button" data-kb="9">9</button><button type="button" class="fn del" data-kb="bs">← 지움</button>
+      <button type="button" data-kb="4">4</button><button type="button" data-kb="5">5</button>
+      <button type="button" data-kb="6">6</button>
+      ${kbAllowTilde?`<button type="button" class="fn" data-kb="~">~</button>`
+                    :`<button type="button" class="fn" data-kb="clr">전체<br>삭제</button>`}
+      <button type="button" data-kb="1">1</button><button type="button" data-kb="2">2</button>
+      <button type="button" data-kb="3">3</button><button type="button" class="fn" data-kb=".">.</button>
+      <button type="button" data-kb="0">0</button><button type="button" data-kb="00">00</button>
+      ${kbAllowTilde?`<button type="button" class="fn" data-kb="clr">전체<br>삭제</button>`
+                    :`<button type="button" class="fn" data-kb="-">-</button>`}
+      <button type="button" class="ok" data-kb="ok">확인</button>
     </div>`;
   document.body.classList.add("kb-on");
-  k.onclick=e=>{ const b=e.target.closest("[data-kb]"); if(!b) return; kbKey(b.dataset.kb); };
-  el.blur();
+  k.onclick = e=>{ const bt=e.target.closest("[data-kb]"); if(!bt) return;
+    e.stopPropagation(); kbKey(bt.dataset.kb); };
+  try{ el.blur(); }catch(e){}
   setTimeout(()=>{ try{ el.scrollIntoView({block:"center",behavior:"smooth"}); }catch(e){} },60);
 }
 function kbClose(){
@@ -3180,7 +3240,7 @@ function kbClose(){
 }
 function kbKey(key){
   if(!kbT) return kbClose();
-  if(key==="ok") { kbT.dispatchEvent(new Event("change",{bubbles:true})); return kbClose(); }
+  if(key==="ok"){ const t=kbT; kbClose(); t.dispatchEvent(new Event("change",{bubbles:true})); return; }
   let v=kbT.value||"";
   if(key==="bs") v=v.slice(0,-1);
   else if(key==="clr") v="";
@@ -3192,12 +3252,6 @@ function kbKey(key){
   const vv=$("#kbV"); if(vv) vv.textContent=v||"—";
   kbT.dispatchEvent(new Event("input",{bubbles:true}));
 }
-/* 패드 밖을 누르면 닫기 */
-document.addEventListener("click",e=>{
-  if(!$("#kb")) return;
-  if(e.target.closest("#kb")||e.target.closest(".kbi")) return;
-  kbT&&kbT.dispatchEvent(new Event("change",{bubbles:true})); kbClose();
-},true);
 window.addEventListener("resize",()=>{ if(!isMob()&&$("#kb")) kbClose(); });
 
 /* ═══════════ 모달 ═══════════ */
@@ -3255,7 +3309,12 @@ function openCheck(mno,itemId){
       sStd:String(it.spm??""),sAct:($("#cks").value||"").trim()});
       if(S.checks.length>1500) S.checks.length=1500;});
     closeModal();
-    if(!r.ok) setTimeout(()=>{if(confirm("불합격으로 기록했습니다.\n표준값 자체를 바꿔야 한다면 수정요청을 올리시겠습니까?")) openReq(mno,itemId,"dh",String(v));},100);
+    if(!r.ok){
+      ntfyPush(`세팅 점검 불합격 · ${m.no}호기`,
+        `${it.name}\n표준 ${it.dh} / 실측 ${v} (편차 ${r.dev>0?"+":""}${r.dev.toFixed(2)}mm · 허용 ±${TOL})\n점검자 : ${uname()}`,
+        ["rotating_light"], 4, appUrl(m.no));
+      setTimeout(()=>{if(confirm("불합격으로 기록했습니다.\n표준값 자체를 바꿔야 한다면 수정요청을 올리시겠습니까?")) openReq(mno,itemId,"dh",String(v));},100);
+    }
   };
   kbAttach(["#ckv","#ckp"],false); kbAttach(["#cks"],true);
   if(!isMob()) setTimeout(()=>$("#ckv").focus(),50);
@@ -3300,10 +3359,16 @@ function openReq(mno,itemId,preField,preVal){
     if(!rs) return alert("변경 사유는 필수입니다.");
     if(!auth) return needLogin();
     $("#rqS").disabled=true;
-    await commit(()=>{S.reqs.unshift({id:uid(),ts:nowISO(),by:me,mno:String(mno),itemId,itemName:it.name,
+    await commit(()=>{S.reqs.unshift({id:uid(),ts:nowISO(),by:uname(),mno:String(mno),itemId,itemName:it.name,
       changes:d.map(x=>({field:x.k,old:x.old,new:x.nv})),reason:rs,status:"pending"});});
     closeModal();
-    alert(`수정요청 ${d.length}건을 등록했습니다.\n품질 승인 후 표준서에 반영됩니다.`);
+    const lines=d.map(x=>`· ${x.lbl} : ${x.old||"—"} → ${x.nv||"—"}`).join("\n");
+    const sent=await ntfyPush(
+      `세팅표준 승인요청 · ${m.no}호기`,
+      `${m.maker} ${m.ton}톤 ${m.no}호기 / ${it.name}\n${lines}\n사유 : ${rs}\n요청자 : ${uname()}\n\n승인 대기 ${pendCnt()}건`,
+      ["pencil","warning"], 4, appUrl(m.no));
+    alert(`수정요청 ${d.length}건을 등록했습니다.\n품질 승인 후 표준서에 반영됩니다.`
+      + (sent?"\n\n승인자에게 알림을 보냈습니다.":"\n\n(알림 전송 실패 — 요청은 정상 등록됨)"));
   };
 }
 
@@ -3326,6 +3391,10 @@ async function decide(reqId,ok){
           field:FIELDS[c.field]||c.field,old,new:c.new,reason:rr.reason,by:rr.by,appBy:rr.appBy,reqId:rr.id});
       });
     }});
+  await ntfyPush(
+    ok?`세팅표준 승인 완료 · ${r.mno}호기`:`세팅표준 반려 · ${r.mno}호기`,
+    `${r.itemName}\n${lines}\n${ok?`반영 개정 : ${revNo(S.rev)}`:"반려"}\n요청자 : ${r.by} / 처리자 : ${uname()}`,
+    ok?["white_check_mark"]:["x"], 3, appUrl(r.mno));
   alert(ok?`반영 완료 — ${revNo(S.rev)}`:"반려 처리했습니다.");
 }
 
