@@ -2480,6 +2480,15 @@ td.dh{font-variant-numeric:tabular-nums;text-align:right;font-weight:700;color:v
 .tag.r{background:var(--red2);color:#9C2F27}
 .tag.d{background:#F1F3F6;color:#8A94A2}
 .empty{padding:36px;text-align:center;color:var(--muted);white-space:normal}
+.editbar{background:var(--amber2);border:1px solid #E0C67A;border-left:3px solid var(--amber);border-radius:6px;
+  padding:9px 12px;margin-bottom:12px;font-size:12.5px;color:#7A5A00}
+.editbar b{font-variant-numeric:tabular-nums}
+td.ecell{padding:2px 4px}
+td.ecell input.ci{width:100%;min-width:64px;border:1px solid var(--line);border-radius:4px;padding:4px 6px;
+  font-size:12.5px;background:#fff}
+td.ecell.num input.ci{text-align:right;font-variant-numeric:tabular-nums}
+td.ecell.chg input.ci{background:#FFF6DB;border-color:var(--amber);font-weight:700;color:#7A5A00}
+td.ecell input.ci:focus{outline:2px solid var(--steel);border-color:var(--steel)}
 
 .readout{display:grid;grid-template-columns:repeat(4,1fr);background:#1B2C45;color:#fff;border-radius:var(--r);
   padding:14px 18px;margin:0 0 14px;gap:10px}
@@ -2642,6 +2651,10 @@ const GRP={std:"a",search:"a",req:"b",check:"b",hist:"b",qr:"c"};
 /* ═══════════ 상태 ═══════════ */
 let S=null,view="std",cur=null,isAdmin=false,me="",qrMode=false,selId="";
 let fq={pn:"",mat:"",chk:""}, sq="";
+let editMode=false, edits={};          /* 표 셀 직접 편집 */
+const EDF=[["name","기종명"],["dh","다이하이트"],["mat","재질"],["t","두께T"],["w","폭W"],["p","피치P"],["spm","최대SPM"]];
+const evOf=(it,k)=> (edits[it.id]&&k in edits[it.id]) ? edits[it.id][k] : String(it[k]??"");
+const chgCnt=()=>{let n=0; Object.keys(edits).forEach(id=>n+=Object.keys(edits[id]).length); return n;};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -2757,8 +2770,17 @@ function vStd(){
   const pend=S.reqs.filter(r=>r.status==="pending"&&r.mno===m.no).length;
   const ck=S.checks.filter(c=>c.mno===m.no), ng=ck.filter(c=>!c.ok).length;
 
+  const ec=(it,k,cls)=>{
+    const v=evOf(it,k), chg=v!==String(it[k]??"");
+    return `<td class="ecell ${cls||""}${chg?" chg":""}"><input class="ci" data-ci="${esc(it.id)}" data-k="${k}" value="${esc(v)}"></td>`;
+  };
   const tr=rows.map((it,i)=>{
     const c=lastCheck(m.no,it.id);
+    if(editMode) return `<tr data-row="${esc(it.id)}">
+      <td class="num muted">${i+1}</td>
+      ${ec(it,"name")}${ec(it,"dh","num")}${ec(it,"mat")}${ec(it,"t","num")}
+      ${ec(it,"w","num")}${ec(it,"p","num")}${ec(it,"spm","num")}
+      <td class="c muted" colspan="2">편집 중</td></tr>`;
     return `<tr data-row="${esc(it.id)}"${it.id===selId?' class="sel"':''}>
       <td class="num muted">${i+1}</td>
       <td><b>${hl(it.name,fq.pn)}</b></td>
@@ -2787,8 +2809,11 @@ function vStd(){
         ${c?`<span class="tag ${c.ok?"g":"r"}">${c.ok?"OK":"NG"} ${esc(c.actual)} · ${fmtTs(c.ts).slice(5,10)}</span>`:""}</div></div>`;}).join("");
 
   $("#main").innerHTML = head(`${esc(m.maker)} ${esc(m.ton)}톤 ${esc(m.no)}호기 · ${esc(docNo(m))}`,
-    `<button class="g" id="bAdd">＋ 기종 추가${isAdmin?"":" 🔒"}</button>
-     <button id="bMach">⚙ 설비 관리${isAdmin?"":" 🔒"}</button>`) + `
+    editMode
+    ? `<button class="p" id="bSave">저장 (${chgCnt()}건)</button><button id="bCancel">취소</button>`
+    : `<button id="bEdit">✎ 표 직접수정${isAdmin?"":" 🔒"}</button>
+       <button class="g" id="bAdd">＋ 기종 추가${isAdmin?"":" 🔒"}</button>
+       <button id="bMach">⚙ 설비 관리${isAdmin?"":" 🔒"}</button>`) + `
     ${qrMode?`<div class="fieldbar"><div class="no">${esc(m.no)}<span>호기</span></div>
       <div class="tx">${esc(m.maker)} ${esc(m.ton)}톤 · QR 스캔으로 열림<br>세팅 전 표준값을 확인하고, 금형 교체 후 [세팅체크]를 기록하세요.</div>
       <div class="rv">${revNo(S.rev)}</div></div>`:""}
@@ -2798,7 +2823,9 @@ function vStd(){
       <div class="kpi good"><small>점검 합격</small><b>${ck.length-ng}</b><em>누적</em></div>
       <div class="kpi ${ng?"bad":""}"><small>점검 불합격</small><b>${ng}</b><em>재조정 대상</em></div>
     </div>
-    <div class="panel noprint fold${qrMode?"":" open"}" id="condBox"><h3 id="condTg">조회조건</h3>
+    ${editMode?`<div class="editbar noprint">✎ <b>표 직접수정</b> 중 — 칸을 눌러 값을 고치고 [저장]을 누르세요.
+      바뀐 칸은 노란색으로 표시됩니다. (Esc = 해당 칸 원복 · Enter = 다음 칸) 현재 <b id="chgN">${chgCnt()}</b>건 변경됨</div>`:""}
+    <div class="panel noprint fold${qrMode?"":" open"}" id="condBox"${editMode?' hidden':''}><h3 id="condTg">조회조건</h3>
       <div class="fl">
         <label>설비</label>
         <select id="fMch">${S.machines.map(x=>`<option value="${esc(x.no)}"${x.no===m.no?" selected":""}>${esc(x.no)}호기 · ${esc(x.maker)} ${esc(x.ton)}톤</option>`).join("")}</select>
@@ -2830,6 +2857,26 @@ function vStd(){
   const cb=$("#condBox"); if(cb) $("#condTg").onclick=()=>cb.classList.toggle("open");
   const ba=$("#bAdd"); if(ba) ba.onclick=()=>needAdmin(()=>openItem(cur.no,null));
   const bm=$("#bMach"); if(bm) bm.onclick=()=>needAdmin(openMachine);
+  const be=$("#bEdit"); if(be) be.onclick=()=>needAdmin(()=>{editMode=true; edits={}; render();});
+  const bc=$("#bCancel"); if(bc) bc.onclick=()=>{
+    if(chgCnt()&&!confirm("고친 내용을 버리고 편집을 끝낼까요?")) return;
+    editMode=false; edits={}; render();};
+  const bs=$("#bSave"); if(bs) bs.onclick=saveEdits;
+  /* 셀 입력 — 렌더를 다시 하지 않고 표시만 갱신 (포커스 유지) */
+  $$(".ci").forEach(inp=>{
+    inp.oninput=()=>{
+      const id=inp.dataset.ci,k=inp.dataset.k,it=itOf(cur,id); if(!it)return;
+      const v=inp.value, org=String(it[k]??"");
+      edits[id]=edits[id]||{};
+      if(v===org) delete edits[id][k]; else edits[id][k]=v;
+      if(!Object.keys(edits[id]).length) delete edits[id];
+      inp.parentElement.classList.toggle("chg",v!==org);
+      const n=chgCnt(); const cn=$("#chgN"); if(cn) cn.textContent=n;
+      const sb=$("#bSave"); if(sb) sb.textContent=`저장 (${n}건)`;
+    };
+    inp.onkeydown=e=>{ if(e.key==="Escape"){ inp.value=String(itOf(cur,inp.dataset.ci)[inp.dataset.k]??""); inp.oninput(); }
+      if(e.key==="Enter"){ e.preventDefault(); const all=$$(".ci"); const i=all.indexOf(inp); if(all[i+1]) all[i+1].focus(); } };
+  });
   $("#fMch").onchange=e=>{cur=mOf(e.target.value); lsSet("pss.machine",cur.no); selId=""; qrMode=false; render();};
   const go=()=>{fq.pn=$("#fPn").value.trim(); fq.mat=$("#fMat").value; fq.chk=$("#fChk").value; render();};
   $("#fGo").onclick=go; $("#fPn").onkeydown=e=>{if(e.key==="Enter")go();};
@@ -3063,6 +3110,53 @@ async function decide(reqId,ok){
   alert(ok?`반영 완료 — ${revNo(S.rev)}`:"반려 처리했습니다.");
 }
 
+
+
+/* ═══ 표 직접수정 — 일괄 저장 ═══ */
+function saveEdits(){
+  const n=chgCnt();
+  if(!n) return alert("고친 내용이 없습니다.");
+  if(!me) return alert("상단에서 사용자를 선택하세요.");
+  const m=cur, list=[];
+  Object.keys(edits).forEach(id=>{
+    const it=itOf(m,id); if(!it) return;
+    Object.keys(edits[id]).forEach(k=>{
+      list.push({id,name:it.name,k,lbl:(k==="name"?"기종명":FIELDS[k]||k),old:String(it[k]??""),nv:edits[id][k]});
+    });
+  });
+  const bad=list.filter(x=>x.k==="name"&&!x.nv.trim());
+  if(bad.length) return alert("기종명은 비울 수 없습니다.");
+  const badDh=list.filter(x=>x.k==="dh"&&(!x.nv.trim()||isNaN(parseFloat(x.nv))));
+  if(badDh.length) return alert("다이하이트는 숫자로 입력하세요.");
+
+  openModal(`표 직접수정 저장 · ${esc(m.no)}호기`,
+    `<div class="info">변경 <b>${n}</b>건을 반영합니다. 저장하면 개정번호가 ${revNo(S.rev+1)} 로 올라갑니다.</div>
+     <div class="tw" style="max-height:38vh;margin-bottom:12px"><table><thead><tr>
+       <th>기종명</th><th>항목</th><th class="num">변경전</th><th class="num">변경후</th></tr></thead>
+       <tbody>${list.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.lbl)}</td>
+         <td class="num muted">${esc(x.old)||"—"}</td><td class="dh">${esc(x.nv)||"—"}</td></tr>`).join("")}</tbody></table></div>
+     <div class="fld"><label>변경 사유 <span style="color:var(--red)">*</span></label>
+       <textarea id="evr" placeholder="예) 금형 재연마 반영 — 초물 실측 기준"></textarea></div>`,
+    `<button onclick="closeModal()">취소</button><button class="p" id="evS">저장</button>`);
+  $("#evS").onclick=async()=>{
+    const rs=$("#evr").value.trim();
+    if(!rs) return alert("변경 사유는 필수입니다.");
+    $("#evS").disabled=true;
+    await commit(()=>{
+      const mm=mOf(m.no); if(!mm) return;
+      S.rev=S.rev+1; S.revDate=today();
+      const stamp={ts:nowISO(),rev:S.rev,mno:String(m.no),reason:rs,by:me,appBy:me,act:"edit"};
+      list.forEach(x=>{
+        const ii=itOf(mm,x.id); if(!ii) return;
+        ii[x.k]=x.nv;
+        S.logs.unshift({id:uid(),...stamp,itemId:x.id,itemName:ii.name,field:x.lbl,old:x.old,new:x.nv});
+      });
+      editMode=false; edits={};
+    });
+    closeModal();
+  };
+  setTimeout(()=>$("#evr").focus(),60);
+}
 
 /* ═══ 관리자 : 기종 추가 / 수정 ═══ */
 const ITF=[["name","기종명(품번)","text"],["dh","다이하이트 (mm)","num"],["mat","재질","text"],
@@ -3324,7 +3418,7 @@ function toggleAdmin(){
 }
 $("#admin1").onclick=toggleAdmin;
 $("#admin2").onclick=toggleAdmin;
-document.addEventListener("visibilitychange",()=>{if(!document.hidden) pull().then(render);});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!editMode) pull().then(render);});
 window.addEventListener("online",()=>pull().then(render));
 window.addEventListener("resize",()=>{if(innerWidth>900) closeNav();});
 
@@ -3341,7 +3435,7 @@ window.addEventListener("resize",()=>{if(innerWidth>900) closeNav();});
   setSync("busy","서버 확인 중…");
   render();
   pull().then(render);
-  setInterval(()=>{if(!document.hidden) pull().then(render);},120000);
+  setInterval(()=>{if(!document.hidden&&!editMode) pull().then(render);},120000);
 })();
 </script>
 </body>
