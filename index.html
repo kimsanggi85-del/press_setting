@@ -2355,7 +2355,7 @@ button.p:hover{background:#1B375A}
 button.g{background:var(--green);color:#fff;border-color:var(--green)}
 button.g:hover{background:#27744A}
 button.d{color:var(--red);border-color:#EBC7C4}
-button.s{padding:4px 8px;font-size:12px}
+button.s{padding:2px 8px;font-size:11.5px;font-weight:600}
 button:disabled{opacity:.45;cursor:default}
 h1,h2,h3{margin:0;font-weight:700}
 h2{font-size:18px}
@@ -2500,14 +2500,18 @@ input.kbi{background:#FFFBF0!important;border-color:var(--amber)!important;curso
 .fl label{font-size:12px;color:var(--muted);white-space:nowrap}
 
 .tw{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:6px;background:#fff}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{padding:6px 8px;border-bottom:1px solid var(--line2);text-align:center;white-space:nowrap}
-th{background:#F7F9FB;color:var(--muted);font-weight:600;position:sticky;top:0;z-index:1}
+table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+th,td{padding:3px 6px;border-bottom:1px solid var(--line2);text-align:center;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+td.wrap,th.wrap{white-space:normal;overflow:visible;text-overflow:clip}
+th{background:#F7F9FB;color:var(--muted);font-weight:600;position:sticky;top:0;z-index:1;
+  padding:5px 6px;font-size:11.5px;letter-spacing:-.2px}
+td{height:26px}
 th.num,td.num{text-align:center}
 tr:hover td{background:#FAFBFD}
 tr.sel td{background:#EEF4FB}
 td.dh{font-variant-numeric:tabular-nums;text-align:center;font-weight:700;color:var(--steel)}
-.tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600;background:var(--steel2);color:var(--steel)}
+.tag{display:inline-block;padding:0 6px;border-radius:9px;font-size:10.5px;font-weight:600;line-height:1.55;background:var(--steel2);color:var(--steel)}
 .tag.a{background:var(--amber2);color:#9A5A16}
 .tag.g{background:var(--green2);color:#1E6B41}
 .tag.r{background:var(--red2);color:#9C2F27}
@@ -2517,8 +2521,9 @@ td.dh{font-variant-numeric:tabular-nums;text-align:center;font-weight:700;color:
   padding:9px 12px;margin-bottom:12px;font-size:12.5px;color:#7A5A00}
 .editbar b{font-variant-numeric:tabular-nums}
 td.ecell{padding:2px 4px}
-td.ecell input.ci{width:100%;min-width:64px;border:1px solid var(--line);border-radius:4px;padding:4px 6px;
-  font-size:12.5px;background:#fff}
+td.ecell{padding:2px 3px}
+td.ecell input.ci{width:100%;min-width:0;border:1px solid var(--line);border-radius:4px;padding:3px 4px;
+  font-size:12px;background:#fff}
 td.ecell input.ci{text-align:center}
 td.ecell.num input.ci{text-align:center;font-variant-numeric:tabular-nums}
 td.ecell.chg input.ci{background:#FFF6DB;border-color:var(--amber);font-weight:700;color:#7A5A00}
@@ -2913,9 +2918,9 @@ function vStd(){
         <span class="tag a">공차 ±${TOL}mm</span>
         ${pend?`<span class="tag r">승인대기 ${pend}</span>`:""}</h3>
       <div class="tw">
-        <table><colgroup><col style="width:42px"><col style="min-width:158px"><col style="width:94px"><col style="width:86px">
-          <col style="width:66px"><col style="width:66px"><col style="width:66px"><col style="width:86px">
-          <col style="width:104px"><col class="noprint" style="width:200px"></colgroup>
+        <table><colgroup><col style="width:38px"><col style="width:186px"><col style="width:80px"><col style="width:74px">
+          <col style="width:54px"><col style="width:54px"><col style="width:54px"><col style="width:72px">
+          <col style="width:92px"><col class="noprint"></colgroup>
         <thead><tr><th>No</th><th>기종명(품번)</th><th>다이하이트</th><th>재질</th>
           <th>두께T</th><th>폭W</th><th>피치P</th><th>최대SPM</th>
           <th>최근점검</th><th class="noprint">작업</th></tr></thead>
@@ -2980,9 +2985,9 @@ function vSearch(){
     <div class="panel">
       <h3>조회 결과 <span class="tag">${hits.length}건</span>
         ${hits.length?`<span class="tag a">설비 ${new Set(hits.map(h=>h.m.no)).size}대</span>`:""}</h3>
-      <div class="tw"><table><colgroup><col style="width:62px"><col style="width:108px"><col style="min-width:150px">
-        <col style="width:94px"><col style="width:86px"><col style="width:66px"><col style="width:66px">
-        <col style="width:66px"><col style="width:86px"><col class="noprint" style="width:84px"></colgroup>
+      <div class="tw"><table><colgroup><col style="width:54px"><col style="width:100px"><col style="width:186px">
+        <col style="width:80px"><col style="width:74px"><col style="width:54px"><col style="width:54px">
+        <col style="width:54px"><col style="width:72px"><col class="noprint"></colgroup>
         <thead><tr><th>호기</th><th>설비</th><th>기종명(품번)</th><th>다이하이트</th>
         <th>재질</th><th>두께T</th><th>폭W</th><th>피치P</th>
         <th>최대SPM</th><th class="noprint">이동</th></tr></thead>
@@ -3003,9 +3008,9 @@ function vReq(){
          <button class="s d" data-act="reject" data-r="${esc(r.id)}">반려</button>`
       : (r.status==="pending"?'<span class="muted">승인 대기</span>':`<span class="muted">${esc(r.appBy||"")}</span>`);
     return `<tr><td class="muted">${fmtTs(r.ts)}</td><td><b>${esc(r.mno)}호기</b></td><td>${esc(r.itemName)}</td>
-      <td style="white-space:normal;min-width:210px;text-align:center">${(r.changes||[]).map(c=>
+      <td class="wrap">${(r.changes||[]).map(c=>
         `${esc(FIELDS[c.field]||c.field)} <span class="muted">${esc(c.old||"—")}</span> → <b class="dh" style="display:inline">${esc(c.new||"—")}</b>`).join("<br>")}</td>
-      <td style="white-space:normal;max-width:260px;text-align:center">${esc(r.reason||"")}</td><td>${esc(r.by)}</td>
+      <td class="wrap">${esc(r.reason||"")}</td><td>${esc(r.by)}</td>
       <td><span class="tag ${r.status==="pending"?"a":r.status==="approved"?"g":"r"}">${r.status==="pending"?"대기":r.status==="approved"?"승인":"반려"}</span></td>
       <td class="noprint">${act}</td></tr>`;}).join("");
   $("#main").innerHTML = head(isAdmin()?`${esc(auth.name)} · 승인자`:auth?`${esc(auth.name)} · 수정자 — 승인 권한 없음`:"승인하려면 승인자 PIN 로그인") + `
@@ -3020,9 +3025,9 @@ function vReq(){
       ${isAdmin()?`<span class="tag g">${esc(auth.name)} · 승인자 — 승인 가능</span>`
         :auth?`<span class="tag a">${esc(auth.name)} · 수정자 — 승인 불가 (승인자 PIN 필요)</span>`
              :'<span class="tag d">조회 권한 — 승인하려면 승인자 PIN 로그인</span>'}</h3>
-      <div class="tw"><table><colgroup><col style="width:124px"><col style="width:66px"><col style="min-width:136px">
-        <col style="min-width:220px"><col style="min-width:170px"><col style="width:74px"><col style="width:66px">
-        <col class="noprint" style="width:112px"></colgroup>
+      <div class="tw"><table><colgroup><col style="width:116px"><col style="width:58px"><col style="width:150px">
+        <col style="width:216px"><col><col style="width:66px"><col style="width:58px">
+        <col class="noprint" style="width:106px"></colgroup>
         <thead><tr><th>요청일시</th><th>설비</th><th>기종명</th><th>변경 내용</th>
         <th>변경사유</th><th>요청자</th><th>상태</th><th class="noprint">처리</th></tr></thead>
         <tbody>${tr||`<tr><td colspan="8" class="empty">등록된 수정요청이 없습니다.</td></tr>`}</tbody></table></div>
@@ -3041,7 +3046,7 @@ function vCheck(){
       <td><span class="tag ${c.ok?"g":"r"}">${c.ok?"합격":"불합격"}</span></td>
       <td class="num">${c.pAct?`${esc(c.pAct)}${c.pAct!==c.pStd?`<span class="tag a" style="margin-left:4px">≠${esc(c.pStd||"—")}</span>`:""}`:'<span class="muted">—</span>'}</td>
       <td class="num">${c.sAct?`${esc(c.sAct)}${c.sAct!==c.sStd?`<span class="tag a" style="margin-left:4px">≠${esc(c.sStd||"—")}</span>`:""}`:'<span class="muted">—</span>'}</td>
-      <td>${esc(c.by)}</td><td style="white-space:normal;max-width:240px;text-align:center">${esc(c.note||"")}</td></tr>`).join("");
+      <td>${esc(c.by)}</td><td class="wrap">${esc(c.note||"")}</td></tr>`).join("");
   $("#main").innerHTML = head(`판정기준 표준값 ±${TOL}mm`) + `
     <div class="readout">
       <div><small>전체 점검</small><b>${list.length}</b></div>
@@ -3051,9 +3056,9 @@ function vCheck(){
     </div>
     ${bar("금형 교체 후 실측 다이하이트 기록 — 초물검사 · 4M 변경 근거자료")}
     <div class="panel"><h3>세팅 점검기록</h3>
-      <div class="tw"><table><colgroup><col style="width:124px"><col style="width:66px"><col style="min-width:140px">
-        <col style="width:78px"><col style="width:78px"><col style="width:66px"><col style="width:66px">
-        <col style="width:96px"><col style="width:96px"><col style="width:74px"><col style="min-width:120px"></colgroup>
+      <div class="tw"><table><colgroup><col style="width:116px"><col style="width:58px"><col style="width:152px">
+        <col style="width:70px"><col style="width:70px"><col style="width:58px"><col style="width:60px">
+        <col style="width:86px"><col style="width:86px"><col style="width:66px"><col></colgroup>
         <thead><tr><th>점검일시</th><th>설비</th><th>기종명</th><th>표준값</th>
         <th>실측값</th><th>편차</th><th>판정</th>
         <th>실제피치</th><th>실제SPM</th><th>점검자</th><th>비고</th></tr></thead>
@@ -3069,17 +3074,17 @@ function vHist(){
     return `<tr><td><span class="tag">${esc(revNo(l.rev))}</span></td><td class="muted">${fmtTs(l.ts)}</td>
       <td><span class="tag ${a[1]}">${a[0]}</span></td>
       <td><b>${esc(l.mno)}호기</b></td><td>${esc(l.itemName)}</td><td>${esc(FIELDS[l.field]||l.field)}</td>
-      <td class="num muted" style="white-space:normal;max-width:190px;text-align:center">${esc(l.old)}</td>
-      <td class="dh" style="white-space:normal;max-width:190px;text-align:center">${esc(l.new)}</td>
-      <td style="white-space:normal;min-width:180px;text-align:center">${esc(l.reason||"")}</td>
+      <td class="num muted" class="wrap">${esc(l.old)}</td>
+      <td class="dh" class="wrap">${esc(l.new)}</td>
+      <td class="wrap">${esc(l.reason||"")}</td>
       <td>${esc(l.by)}</td><td>${esc(l.appBy)}</td></tr>`;}).join("");
   $("#main").innerHTML = head(`현재 ${revNo(S.rev)} · 개정일 ${esc(S.revDate)}`) + `
     ${bar("승인되어 반영된 변경 내역 — 문서 개정 근거")}
     <div class="panel"><h3>개정이력 <span class="tag">${list.length}건</span>
       <span class="tag a">현재 ${revNo(S.rev)}</span></h3>
-      <div class="tw"><table><colgroup><col style="width:66px"><col style="width:124px"><col style="width:66px">
-        <col style="width:66px"><col style="min-width:136px"><col style="width:84px"><col style="width:110px">
-        <col style="width:110px"><col style="min-width:150px"><col style="width:74px"><col style="width:74px"></colgroup>
+      <div class="tw"><table><colgroup><col style="width:60px"><col style="width:116px"><col style="width:58px">
+        <col style="width:58px"><col style="width:150px"><col style="width:76px"><col style="width:96px">
+        <col style="width:96px"><col><col style="width:66px"><col style="width:66px"></colgroup>
         <thead><tr><th>개정</th><th>반영일시</th><th>구분</th><th>설비</th><th>기종명</th><th>항목</th>
         <th>변경전</th><th>변경후</th><th>변경사유</th><th>요청자</th><th>처리자</th></tr></thead>
         <tbody>${tr||`<tr><td colspan="11" class="empty">개정 이력이 없습니다 — 최초 제정본(Rev.01) 상태입니다.</td></tr>`}</tbody></table></div>
