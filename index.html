@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>설비별 세팅표준 v1.1 · 태진다이텍</title>
+<title>설비별 세팅표준 v1.2 · 태진다이텍</title>
 <script>/* QR encoder (qrcode-generator, MIT) — 내장: 외부망 없이도 생성 */
 //---------------------------------------------------------------------
 //
@@ -2681,6 +2681,7 @@ td.ecell input.ci:focus{outline:2px solid var(--steel);border-color:var(--steel)
     <div class="mega-col">
       <a class="scr" data-v="req"><i>✎</i>수정요청 승인<em>APPROVAL</em></a>
       <a class="scr" data-v="check"><i>✓</i>세팅 점검기록<em>VERIFY</em></a>
+      <a class="scr" data-v="chg"><i>⇄</i>금형교체 대비 실측<em>MES</em></a>
       <a class="scr" data-v="hist"><i>⟲</i>개정이력<em>REVISION</em></a>
     </div>
   </div></div>
@@ -2707,6 +2708,7 @@ td.ecell input.ci:focus{outline:2px solid var(--steel);border-color:var(--steel)
   <a data-v="search"><i>🔍</i>품번별 조회</a>
   <a data-v="req"><i>✎</i>수정요청 승인<span class="nb" id="nb1" hidden>0</span></a>
   <a data-v="check"><i>✓</i>세팅 점검기록</a>
+  <a data-v="chg"><i>⇄</i>금형교체 대비 실측</a>
   <a data-v="hist"><i>⟲</i>개정이력</a>
   <a data-v="qr"><i>▣</i>QR 라벨 발행</a>
   <div class="nvuser">
@@ -2754,8 +2756,8 @@ const FIELDS={dh:"다이하이트",mat:"재질",t:"두께T",w:"폭W",p:"피치P"
 const NOTE="3G Pack Seal류 내철 1번철 / 외철 2번철";
 const TOL=0.3;
 const VIEWS={std:"설비별 표준서",search:"품번별 조회",req:"수정요청 승인",
-             check:"세팅 점검기록",hist:"개정이력",qr:"QR 라벨 발행"};
-const GRP={std:"a",search:"a",req:"b",check:"b",hist:"b",qr:"c"};
+             check:"세팅 점검기록",chg:"금형교체 대비 실측",hist:"개정이력",qr:"QR 라벨 발행"};
+const GRP={std:"a",search:"a",req:"b",check:"b",chg:"b",hist:"b",qr:"c"};
 
 /* ═══════════ 상태 ═══════════ */
 let S=null,view="std",cur=null,auth=null,me="",qrMode=false,selId="";
@@ -2847,7 +2849,7 @@ function render(){
   const rb=$("#pcTop .navitem[data-g='b']>button");
   if(rb) rb.innerHTML="점검 · 승인 ▾"+(p?`<span class="nb">${p}</span>`:"");
   $("#cnt").textContent=`설비 ${S.machines.length}대 · ${revNo(S.rev)}`;
-  ({std:vStd,search:vSearch,req:vReq,check:vCheck,hist:vHist,qr:vQr})[view]();
+  ({std:vStd,search:vSearch,req:vReq,check:vCheck,chg:vChg,hist:vHist,qr:vQr})[view]();
 }
 function head(extra,acts){
   return `<div class="top"><button id="hamb" aria-label="메뉴">☰</button>
@@ -3164,6 +3166,63 @@ function vCheck(){
             ${c.sAct?`<br>실제 SPM <span class="n">${esc(c.sAct)}</span>${c.sAct!==c.sStd?` <span class="tag a">표준 ${esc(c.sStd||"—")}</span>`:""}`:""}</div>
           <div class="rc-meta">점검 ${esc(c.by)}${c.note?" · "+esc(c.note):""}</div></div>`).join("")
           :'<div class="empty">세팅 점검기록이 없습니다.</div>'}</div></div></div>`;
+  bindBar();
+}
+
+/* --- 금형교체 대비 실측 (SQ 1_5 생산조건 기록) ---
+   MES 생산실적(daily_production)에서 호기별 품번이 바뀐 시점 = 금형교체 → 그날~다음날 세팅 점검(실측 다이하이트) 기록이 있는지 대조
+   하루 500타 미만 = 금형수리·시타(측정의뢰) 제외 · 표준서에 없는 품번은 '표준 미등록' */
+const CHG_REP=500;
+let CHG={from:"",to:"",rows:null,busy:false};
+const pnCore=s=>{s=String(s||"").toUpperCase().split("\n")[0].replace(/\(LOWER\)/g,"-L").replace(/\(UPPER\)/g,"-U");
+  const m=s.match(/(?:BDA-|RACE ?WAY\s*)(\d{3,4}[-0-9A-Z]*)/);s=(m?m[1]:s).replace(/\(.*$/,"");
+  return s.split(/[^0-9A-Z]+/).filter(Boolean).map(x=>x.replace(/^0+(?=.)/,"")).join("");};   /* 1945-349-02 = 1945-349-2 · Race way 1106-2 = IW/OW-BDA-1106-2 */
+function itemFor(mno,pn){const m=mOf(String(mno));if(!m)return null;const c=pnCore(pn);if(c.length<4)return null;
+  return m.items.find(it=>pnCore(it.name)===c)||m.items.find(it=>{const x=pnCore(it.name);return x.length>=4&&(x.endsWith(c)||c.endsWith(x));})||m.items.find(it=>{const x=pnCore(it.name);return x.length>=4&&c.startsWith(x)&&/^[A-Z]$/.test(c.slice(x.length));})||null;}
+async function sbAll(path){const out=[];for(let off=0;off<100000;off+=1000){const r=await fetch(`${SB_URL}/rest/v1/${path}&limit=1000&offset=${off}`,{headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}});if(!r.ok)throw new Error(r.status);const j=await r.json();out.push(...j);if(j.length<1000)break;}return out;}
+async function chgLoad(){
+  if(CHG.busy)return;CHG.busy=true;
+  try{
+    const prev=new Date(CHG.from+"T00:00:00");prev.setDate(prev.getDate()-7);const pf=prev.toISOString().slice(0,10);
+    const [prod,ms]=await Promise.all([
+      sbAll(`daily_production?select=ymd,machine_code,item_code,start_time,shot_qty&ymd=gte.${pf}&ymd=lte.${CHG.to}&order=machine_code.asc,ymd.asc,start_time.asc,item_code.asc`),
+      sbAll("machine_status?select=machine_code,machine_name&order=machine_code.asc")]);
+    const HO=Object.fromEntries(ms.map(m=>{const x=String(m.machine_name||"").match(/^(\d{1,3})/);return [m.machine_code,x?String(Number(x[1])):""];}));
+    const day={};for(const p of prod){const k=p.machine_code+"|"+p.ymd+"|"+p.item_code;(day[k]=day[k]||{...p,shot:0}).shot+=Number(p.shot_qty)||0;}
+    const rows=[];let last={};
+    for(const p of prod){const mc=p.machine_code,pv=last[mc];last[mc]=p.item_code;
+      if(!pv||pv===p.item_code||p.ymd<CHG.from)continue;
+      const ho=HO[mc]||mc,d=day[mc+"|"+p.ymd+"|"+p.item_code],it=itemFor(ho,p.item_code);
+      const t0=p.ymd,t1=new Date(p.ymd+"T00:00:00");t1.setDate(t1.getDate()+2);const t1s=t1.toISOString().slice(0,10);
+      const ck=it?S.checks.filter(c=>c.mno===String(ho)&&c.itemId===it.id&&fmtYmd(c.ts)>=t0&&fmtYmd(c.ts)<t1s).sort((a,b)=>a.ts.localeCompare(b.ts))[0]:null;
+      rows.push({ymd:p.ymd,st:(p.start_time||"").slice(-5),ho,from:pv,pn:p.item_code,it,shot:d?d.shot:0,ck,
+        st2:ck?(ck.ok?"ok":"ng"):(d&&d.shot<CHG_REP)?"rep":!it?"unreg":"miss"});}
+    CHG.rows=rows.sort((a,b)=>(b.ymd+b.st).localeCompare(a.ymd+a.st));
+  }catch(e){CHG.rows=[];CHG.err=String(e.message||e);}finally{CHG.busy=false;}
+  if(view==="chg")render();
+}
+const fmtYmd=ts=>{const d=new Date(ts);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+function vChg(){
+  if(!CHG.from){const t=new Date(),f=new Date();f.setDate(f.getDate()-30);CHG.to=fmtYmd(t);CHG.from=fmtYmd(f);}
+  if(!CHG.rows&&!CHG.busy)chgLoad();
+  const L=CHG.rows||[],tgt=L.filter(r=>r.st2==="ok"||r.st2==="ng"||r.st2==="miss"),done=tgt.filter(r=>r.ck).length;
+  const ST={ok:["실측 합격","g"],ng:["실측 불합격","r"],miss:["실측 없음","r"],rep:["수리·시타 (측정의뢰)",""],unreg:["표준 미등록","a"]};
+  const tr=L.map(r=>`<tr><td>${esc(r.ymd)} ${esc(r.st)}</td><td><b>${esc(r.ho)}호기</b></td><td class="muted">${esc(r.from)}</td><td><b>${esc(r.pn)}</b>${r.it?`<br><small class="muted">표준 ${esc(r.it.name)} · DH ${esc(r.it.dh)}</small>`:""}</td>
+    <td class="num">${r.shot.toLocaleString()}</td><td><span class="tag ${ST[r.st2][1]}">${ST[r.st2][0]}</span></td>
+    <td>${r.ck?`실측 <b>${esc(r.ck.actual)}</b> (편차 ${esc(r.ck.dev)}) · ${esc(r.ck.by)} · ${fmtTs(r.ck.ts)}`:r.it&&r.st2==="miss"?`<button class="p" onclick="cur=mOf('${esc(r.ho)}');openCheck('${esc(r.ho)}','${esc(r.it.id)}')">실측 입력</button>`:""}</td></tr>`).join("");
+  $("#main").innerHTML=head(`판정 ±${TOL}mm · MES 금형교체 기준`)+`
+    <div class="readout">
+      <div><small>금형교체 (점검 대상)</small><b>${tgt.length}</b></div>
+      <div><small>실측 기록</small><b class="g">${done}</b></div>
+      <div><small>실측 없음</small><b class="${tgt.length-done?"r":""}">${tgt.length-done}</b></div>
+      <div><small>실시율</small><b>${tgt.length?Math.round(done/tgt.length*100):0}<span style="font-size:15px">%</span></b></div>
+    </div>
+    ${bar("MES에서 호기별 품번이 바뀐 시점(금형교체) × 세팅 점검(실측 다이하이트) 기록 — 교체 당일~다음날 기록을 인정 · 500타 미만 수리·시타 제외")}
+    <div class="panel"><h3>금형교체 대비 실측
+      <span style="margin-left:auto;display:flex;gap:6px;align-items:center;font-weight:400;font-size:13px">
+      <input type="date" id="chF" value="${CHG.from}"> ~ <input type="date" id="chT" value="${CHG.to}"><button onclick="CHG.from=$('#chF').value;CHG.to=$('#chT').value;CHG.rows=null;render()">조회</button></span></h3>
+      ${CHG.busy&&!CHG.rows?'<div class="empty">MES 실적 불러오는 중…</div>':CHG.err?`<div class="empty">불러오기 실패 — ${esc(CHG.err)}</div>`:`<div class="tw"><table><thead><tr><th>교체 일시</th><th>설비</th><th>이전 품번</th><th>교체 품번</th><th>타수</th><th>판정</th><th>실측 기록</th></tr></thead>
+      <tbody>${tr||'<tr><td colspan="7" class="empty">기간 내 금형교체 없음</td></tr>'}</tbody></table></div>`}</div>`;
   bindBar();
 }
 
@@ -3908,13 +3967,16 @@ window.addEventListener("resize",()=>{if(innerWidth>900) closeNav();});
   if(sn&&sr&&Object.values(ACCOUNTS).some(a=>a.name===sn&&a.role===sr)){ auth={name:sn,role:sr}; me=sn; }
   else { me=""; lsSet("pss.me",""); lsSet("pss.role",""); }   /* 명단에서 빠진 계정 정리 */
   paintUser();
-  const qm=new URLSearchParams(location.search).get("m");
+  const qm=new URLSearchParams(location.search).get("m"),qc=new URLSearchParams(location.search).get("chk");
   cur=(qm&&mOf(qm))||mOf(lsGet("pss.machine"))||S.machines[0];
   if(qm&&mOf(qm)){qrMode=true; view="std";}
   else{const v=lsGet("pss.view"); if(v&&VIEWS[v]) view=v;}
   setSync("busy","서버 확인 중…");
+  if(qc){const [ho,pn]=qc.split(":");if(mOf(ho)){cur=mOf(ho);view="std";}}
   render();
-  pull().then(render);
+  pull().then(()=>{render();
+    if(qc){const [ho,pn]=qc.split(":"),it=itemFor(ho,decodeURIComponent(pn||""));
+      if(it){cur=mOf(ho);render();openCheck(ho,it.id);} else alert(`${ho}호기 표준서에 ${pn} 품번이 없습니다 — 표준 등록 후 세팅 점검을 기록하세요`);}});
   setInterval(()=>{if(!document.hidden&&!editMode) pull().then(render);},120000);
 })();
 </script>
